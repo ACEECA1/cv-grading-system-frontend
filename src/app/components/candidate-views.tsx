@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import {
   Pagination,
   PaginationContent,
@@ -11,8 +11,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "./ui/pagination";
-import { Search, MapPin, Briefcase, Upload, FileText, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { MatchRing } from "./match-ring";
+import { ApplicationModal } from "./ApplicationModal";
 import { candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO, type PageResponse } from "../api";
 
 function statusBadge(status: string) {
@@ -36,13 +37,15 @@ function postedLabel(dateIso: string): string {
 }
 
 export function JobBoard() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [jobsPage, setJobsPage] = useState<PageResponse<JobOfferDTO> | null>(null);
-  const [uploadFor, setUploadFor] = useState<JobOfferDTO | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +126,11 @@ export function JobBoard() {
       ) : (
         <div className="grid grid-cols-3 gap-6">
           {visible.map((job) => (
-            <Card key={job.id} className="p-6 flex flex-col gap-4 group hover:border-[#ED1C24]/30 transition-all">
+            <Card
+              key={job.id}
+              onClick={() => navigate(`/candidate/jobs/${job.id}`)}
+              className="p-6 flex flex-col gap-4 group hover:border-[#ED1C24]/30 transition-all cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded" style={{ fontSize: 11, fontWeight: 600 }}>
                   {job.status}
@@ -144,7 +151,14 @@ export function JobBoard() {
                 </div>
               </div>
 
-              <Button onClick={() => setUploadFor(job)} className="bg-[#ED1C24] hover:bg-[#c81820] text-white mt-auto w-full">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedJobId(job.id);
+                  setIsModalOpen(true);
+                }}
+                className="bg-[#ED1C24] hover:bg-[#c81820] text-white mt-auto w-full"
+              >
                 Apply Now
               </Button>
             </Card>
@@ -170,107 +184,15 @@ export function JobBoard() {
         </PaginationContent>
       </Pagination>
 
-      <UploadModal job={uploadFor} onClose={() => setUploadFor(null)} />
+      <ApplicationModal
+        jobId={selectedJobId}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedJobId(null);
+        }}
+      />
     </div>
-  );
-}
-
-function UploadModal({ job, onClose }: { job: JobOfferDTO | null; onClose: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [drag, setDrag] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  useEffect(() => {
-    if (!job) {
-      setFile(null);
-      setDrag(false);
-      setSubmitting(false);
-      setError("");
-      setSuccess("");
-    }
-  }, [job]);
-
-  const submit = async () => {
-    if (!job || !file) return;
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
-    try {
-      const response = await candidateApi.uploadCv(job.id, file);
-      setSuccess(`Submitted. CV #${response.cvId}, evaluation #${response.evaluationId} is ${response.evaluationStatus}.`);
-      setFile(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={!!job} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Apply for {job?.title}</DialogTitle>
-        </DialogHeader>
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDrag(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) setFile(f);
-          }}
-          className={`rounded-lg border-2 border-dashed p-10 text-center transition-colors ${
-            drag ? "border-[#ED1C24] bg-red-50" : "border-gray-300 bg-gray-50"
-          }`}
-        >
-          <div className="w-14 h-14 rounded-full bg-red-50 text-[#ED1C24] flex items-center justify-center mx-auto mb-4">
-            <Upload className="w-6 h-6" />
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 600 }} className="mb-1">
-            Upload your CV (PDF only)
-          </div>
-          <div className="text-gray-600 mb-4" style={{ fontSize: 13 }}>
-            Drag and drop your file here, or click to browse.
-          </div>
-          <label>
-            <input
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              disabled={submitting}
-            />
-            <span className="inline-block bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-lg cursor-pointer" style={{ fontSize: 13, fontWeight: 600 }}>
-              Browse Files
-            </span>
-          </label>
-          {file && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2" style={{ fontSize: 13 }}>
-              <FileText className="w-4 h-4 text-[#ED1C24]" /> {file.name}
-            </div>
-          )}
-        </div>
-
-        {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>}
-        {success && <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">{success}</div>}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
-            Close
-          </Button>
-          <Button disabled={!file || submitting} onClick={() => void submit()} className="bg-[#ED1C24] hover:bg-[#c81820] text-white disabled:opacity-50">
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Application"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

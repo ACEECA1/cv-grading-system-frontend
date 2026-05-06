@@ -37,14 +37,15 @@ export interface AuthTokensDTO {
 }
 
 export interface ExperienceRangeDTO {
-  minYears: number | null;
-  maxYears: number | null;
+  minYears: string | null;
+  maxYears: string | null;
 }
 
 export interface StructuredJdDTO {
   id: number;
   title: string;
   companyName: string | null;
+  description?: string | null;
   requiredSkills: string[];
   preferredSkills: string[];
   experienceRange: ExperienceRangeDTO | null;
@@ -65,12 +66,45 @@ export interface JobOfferDTO {
   updatedAt: string;
 }
 
+export interface JobOfferDetailDTO {
+  id: number;
+  title: string;
+  status: "DRAFT" | "PUBLISHED" | "CLOSED" | "FAILED";
+  createdAt: string;
+  structuredJd: StructuredJdDTO | null;
+}
+
+export interface ApplicantSummaryDTO {
+  evaluationId: number | null;
+  candidateName: string;
+  matchScore: number | null;
+  status: string;
+  applicationDate: string;
+}
+
+export interface UpdateJobOfferPayloadDTO {
+  title: string;
+  structuredJd: {
+    workLocation: string | null;
+    employmentType: string | null;
+    experienceRange: ExperienceRangeDTO | null;
+    requiredSkills: string[];
+    preferredSkills: string[];
+    responsibilities: string[];
+  };
+}
+
 export interface UploadCvResponseDTO {
   cvId: number;
   evaluationId: number;
   cvStatus: "UPLOADED" | "OCR_DONE" | "SENT_FOR_EVALUATION" | "EVALUATED" | "FAILED";
   evaluationStatus: "WAITING" | "SCORED" | "FAILED";
   uploadDate: string;
+}
+
+export interface ApplyForJobResponseDTO {
+  cvId: number;
+  evaluationStatus: "WAITING" | "SCORED" | "FAILED";
 }
 
 export interface CandidateEvaluationDTO {
@@ -412,6 +446,16 @@ export const candidateApi = {
         location: params.location,
       })}`,
     ),
+  getCandidateJobOffer: (jobId: string) =>
+    requestJson<JobOfferDetailDTO>(`/api/job-offers/public/${jobId}`, {}, { auth: false }),
+  applyForJob: (jobId: string, cvFile: File) => {
+    const formData = new FormData();
+    formData.append("file", cvFile);
+    return requestJson<ApplyForJobResponseDTO>(`/api/candidate/job-offers/${jobId}/cv`, {
+      method: "POST",
+      body: formData,
+    });
+  },
   uploadCv: (jobOfferId: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -456,6 +500,22 @@ export const hrApi = {
     requestJson<HrEvaluationDetailDTO>(`/api/hr/evaluations/${evaluationId}`),
   downloadEvaluationCv: (evaluationId: number) =>
     downloadWithAuth(`/api/hr/evaluations/${evaluationId}/cv/download`, `evaluation-${evaluationId}-cv.pdf`),
+};
+
+export const jobOffersApi = {
+  getJobOffer: (jobId: number) =>
+    requestJson<JobOfferDetailDTO>(`/api/hr/job-offers/${jobId}`),
+  getJobApplicants: (jobId: number) =>
+    requestJson<ApplicantSummaryDTO[]>(`/api/hr/job-offers/${jobId}/applicants`),
+  updateJobOffer: (jobId: number, data: UpdateJobOfferPayloadDTO) =>
+    requestJson<JobOfferDetailDTO>(`/api/hr/job-offers/${jobId}`, { method: "PUT", body: JSON.stringify(data) }),
+  toggleJobStatus: (jobId: number, status: "PUBLISHED" | "CLOSED") =>
+    requestJson<JobOfferDetailDTO>(`/api/hr/job-offers/${jobId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  deleteJobOffer: (jobId: number) =>
+    requestJson<void>(`/api/hr/job-offers/${jobId}`, { method: "DELETE" }),
 };
 
 export const adminApi = {

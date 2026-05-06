@@ -14,7 +14,9 @@ import { AuthPage } from "./components/auth-page";
 import { SidebarShell, type Role } from "./components/sidebar-shell";
 import { AdminDashboard, HRApprovals, SystemHealth } from "./components/admin-views";
 import { CandidateEvaluationDetail } from "./components/CandidateEvaluationDetail";
+import { CandidateJobDetail } from "./components/CandidateJobDetail";
 import { JobBoard, MyApplications } from "./components/candidate-views";
+import { HrJobOfferDetail } from "./components/HrJobOfferDetail";
 import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
 import {
   authApi,
@@ -70,7 +72,7 @@ const navByRole: Record<Role, { to: string; label: string; icon: React.ReactNode
   ],
   hr: [
     { to: "/hr/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
-    { to: "/hr/submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/hr/jobs", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
     { to: "/hr/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
     { to: "/hr/pipeline", label: "Candidate Pipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
   ],
@@ -213,12 +215,18 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<HRDashboard createJobPath="/hr/create-job" />} />
         <Route path="create-job" element={<JobOfferCreate backTo="/hr/dashboard" />} />
+        <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/hr/jobs/${job.id}`} />} />
+        <Route path="jobs/:jobId" element={<HrJobOfferDetail />} />
         <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/hr/submissions/jobs/${job.id}`} />} />
         <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="hr" />} />
         <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
         <Route
           path="pipeline"
-          element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluations" />}
+          element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluation" />}
+        />
+        <Route
+          path="pipeline/evaluation/:evaluationId"
+          element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
         />
         <Route
           path="pipeline/evaluations/:evaluationId"
@@ -230,6 +238,7 @@ export default function App() {
       <Route path="/candidate" element={<RoleLayout role="candidate" session={session} onLogout={() => void handleLogout()} />}>
         <Route index element={<Navigate to="jobs" replace />} />
         <Route path="jobs" element={<JobBoard />} />
+        <Route path="jobs/:jobId" element={<CandidateJobDetail />} />
         <Route path="applications" element={<MyApplications />} />
         <Route path="*" element={<Navigate to="jobs" replace />} />
       </Route>

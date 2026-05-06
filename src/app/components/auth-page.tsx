@@ -230,6 +230,15 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               <Button onClick={() => void handleLogin()} disabled={busy} className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
               </Button>
+              <div className="text-right">
+                <button
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-sm text-[#ED1C24] hover:underline"
+                  disabled={busy}
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             <div className="text-center mt-5 text-gray-600" style={{ fontSize: 13 }}>

@@ -422,6 +422,18 @@ export const authApi = {
       { method: "POST", body: JSON.stringify(payload) },
       { auth: false },
     ),
+  requestPasswordReset: (email: string) =>
+    requestJson<void>(
+      "/api/auth/forgot-password",
+      { method: "POST", body: JSON.stringify({ email }) },
+      { auth: false },
+    ),
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    requestJson<void>(
+      "/api/auth/reset-password",
+      { method: "POST", body: JSON.stringify({ email, code, newPassword }) },
+      { auth: false },
+    ),
   login: (payload: { usernameOrEmail: string; password: string }) =>
     requestJson<AuthTokensDTO>(
       "/api/auth/login",

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { AuthPage } from "./components/auth-page";
+import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { SidebarShell, type Role } from "./components/sidebar-shell";
 import { AdminDashboard, HRApprovals, SystemHealth } from "./components/admin-views";
 import { CandidateEvaluationDetail } from "./components/CandidateEvaluationDetail";
@@ -181,15 +182,17 @@ export default function App() {
     } finally {
       clearStoredAuth();
       setSession(null);
-      navigate("/auth/login", { replace: true });
+      navigate("/login", { replace: true });
     }
   };
 
   if (!session) {
     return (
       <Routes>
+        <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/auth/*" element={<AuthPage onAuthenticated={handleAuthenticated} />} />
-        <Route path="*" element={<Navigate to="/auth/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
@@ -197,6 +200,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+      <Route path="/login" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+      <Route path="/forgot-password" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
       <Route path="/auth/*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
 
       <Route path="/admin" element={<RoleLayout role="admin" session={session} onLogout={() => void handleLogout()} />}>

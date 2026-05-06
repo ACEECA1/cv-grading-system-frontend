@@ -184,20 +184,35 @@ function ScoreRing({ score }: { score: number | null }) {
   );
 }
 
-function QuestionAccordion({ question, children }: { question: string | null | undefined; children: ReactNode }) {
+function QuestionAccordion({
+  question,
+  badge,
+  children,
+}: {
+  question: string | null | undefined;
+  badge?: string | null;
+  children: ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden mb-3">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-full px-4 py-3 flex items-center justify-between text-left transition-colors hover:bg-gray-50"
       >
-        <span className="text-sm font-medium text-gray-900">{question || "-"}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-gray-900 truncate">{question || "-"}</span>
+          {badge && (
+            <span className="shrink-0 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-[11px] font-semibold">
+              {badge}
+            </span>
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      {isOpen && <div className="border-t border-gray-200 bg-gray-50 shadow-inner px-4 py-4">{children}</div>}
+      {isOpen && <div className="border-t border-gray-200 bg-gray-50 px-4 py-4">{children}</div>}
     </div>
   );
 }
@@ -480,19 +495,23 @@ export function CandidateEvaluationDetail({
                   <div className="rounded-lg border border-gray-200 bg-white p-5">
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Technical Assessment</h3>
                     {technicalQuestions.length > 0 ? (
-                      <div className="space-y-3">
+                      <div>
                         {technicalQuestions.map((item, index) => (
-                          <QuestionAccordion key={`tech-${index}`} question={item.question}>
+                          <QuestionAccordion
+                            key={`tech-${index}`}
+                            question={item.question}
+                            badge={item.difficulty || item.skillArea || null}
+                          >
                             <div className="space-y-3">
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Expected Answer</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Expected Answer:</p>
                                 <div className="rounded-md border border-gray-200 bg-white p-3 text-sm text-gray-700">
                                   {item.expectedAnswer || "-"}
                                 </div>
                               </div>
 
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Follow-up Questions</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Follow-up Questions:</p>
                                 {item.followUpQuestions?.length > 0 ? (
                                   <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                                     {item.followUpQuestions.map((followUp, followUpIndex) => (
@@ -500,7 +519,7 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-sm text-gray-500">-</p>
+                                  <p className="text-sm text-gray-500">No follow-up questions.</p>
                                 )}
                               </div>
 
@@ -515,24 +534,24 @@ export function CandidateEvaluationDetail({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No technical questions</p>
+                      <p className="text-sm text-gray-500">No technical questions generated.</p>
                     )}
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-white p-5">
                     <h3 className="text-base font-semibold text-gray-900 mb-4">HR &amp; Behavioral Assessment</h3>
                     {hrQuestions.length > 0 ? (
-                      <div className="space-y-3">
+                      <div>
                         {hrQuestions.map((item, index) => (
                           <QuestionAccordion key={`hr-${index}`} question={item.question}>
                             <div className="space-y-4">
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Psychological Intent</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Psychological Intent:</p>
                                 <p className="text-sm italic text-gray-700">{item.psychologicalIntent || "-"}</p>
                               </div>
 
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Ideal Response Indicators</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Ideal Response Indicators:</p>
                                 {item.idealResponseIndicators?.length > 0 ? (
                                   <div className="space-y-1.5">
                                     {item.idealResponseIndicators.map((entry, entryIndex) => (
@@ -543,12 +562,12 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-gray-500">-</p>
+                                  <p className="text-sm text-gray-500">No ideal response indicators.</p>
                                 )}
                               </div>
 
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Red Flags</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Red Flags:</p>
                                 {item.redFlags?.length > 0 ? (
                                   <div className="space-y-1.5">
                                     {item.redFlags.map((entry, entryIndex) => (
@@ -559,15 +578,33 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-gray-500">-</p>
+                                  <p className="text-sm text-gray-500">No red flags listed.</p>
                                 )}
+                              </div>
+
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Follow-up Probes:</p>
+                                {item.followUpProbes?.length > 0 ? (
+                                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                    {item.followUpProbes.map((probe, probeIndex) => (
+                                      <li key={`hr-${index}-probe-${probeIndex}`}>{probe || "-"}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-sm text-gray-500">No follow-up probes.</p>
+                                )}
+                              </div>
+
+                              <div className="rounded-md border border-gray-200 bg-white p-3">
+                                <p className="text-sm font-semibold text-gray-900 mb-1">Evaluation Criteria:</p>
+                                <p className="text-sm text-gray-700">{item.evaluationCriteria || "-"}</p>
                               </div>
                             </div>
                           </QuestionAccordion>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No HR questions</p>
+                      <p className="text-sm text-gray-500">No HR questions generated.</p>
                     )}
                   </div>
                 </div>

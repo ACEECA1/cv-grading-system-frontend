@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -9,12 +10,30 @@ import logoUrl from "../../imports/image.png";
 
 type AuthMode = "login" | "register-candidate" | "register-hr" | "verify";
 
+const authPathByMode: Record<AuthMode, string> = {
+  login: "/auth/login",
+  "register-candidate": "/auth/register/candidate",
+  "register-hr": "/auth/register/hr",
+  verify: "/auth/verify",
+};
+
+function resolveMode(pathname: string): AuthMode | null {
+  if (pathname === "/auth/login") return "login";
+  if (pathname === "/auth/register/candidate") return "register-candidate";
+  if (pathname === "/auth/register/hr") return "register-hr";
+  if (pathname === "/auth/verify") return "verify";
+  return null;
+}
+
 interface AuthPageProps {
   onAuthenticated: (tokens: AuthTokensDTO) => void;
 }
 
 export function AuthPage({ onAuthenticated }: AuthPageProps) {
-  const [mode, setMode] = useState<AuthMode>("login");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const mode = useMemo(() => resolveMode(location.pathname), [location.pathname]);
+  const activeMode = mode ?? "login";
   const [otp, setOtp] = useState("");
   const [name, setName] = useState({ first: "", last: "" });
   const [username, setUsername] = useState("");
@@ -28,6 +47,12 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [busy, setBusy] = useState(false);
 
   const activeEmail = useMemo(() => verificationEmail || email, [verificationEmail, email]);
+
+  useEffect(() => {
+    if (!mode) {
+      navigate(authPathByMode.login, { replace: true });
+    }
+  }, [mode, navigate]);
 
   const clearMessages = () => {
     setError("");
@@ -99,13 +124,13 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
         email: trimmedEmail,
         password,
       };
-      if (mode === "register-hr") {
+      if (activeMode === "register-hr") {
         await authApi.registerHr(payload);
       } else {
         await authApi.registerCandidate(payload);
       }
       setVerificationEmail(trimmedEmail);
-      setMode("verify");
+      navigate(authPathByMode.verify);
       setInfo("Account created. Enter the verification code sent to your email.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
@@ -123,7 +148,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     setBusy(true);
     try {
       await authApi.verify({ email: activeEmail.trim(), code: otp.trim() });
-      setMode("login");
+      navigate(authPathByMode.login);
       setIdentity(username || email);
       setInfo("Email verified. You can now sign in.");
       setOtp("");
@@ -153,7 +178,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
 
   const switchMode = (next: AuthMode) => {
     clearMessages();
-    setMode(next);
+    navigate(authPathByMode[next]);
   };
 
   return (
@@ -163,7 +188,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
           <img src={logoUrl} alt="Djezzy" className="w-20 h-20 object-contain" />
           <div style={{ fontSize: 20, fontWeight: 600 }}>Djezzy Talent Portal</div>
           <div className="text-gray-500 text-center" style={{ fontSize: 13 }}>
-            {mode === "verify" ? "Verify your email" : mode.startsWith("register") ? "Create an account" : "Sign in to continue"}
+            {activeMode === "verify" ? "Verify your email" : activeMode.startsWith("register") ? "Create an account" : "Sign in to continue"}
           </div>
         </div>
 
@@ -178,7 +203,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
           </div>
         )}
 
-        {mode === "login" && (
+        {activeMode === "login" && (
           <>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -216,12 +241,12 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
           </>
         )}
 
-        {(mode === "register-candidate" || mode === "register-hr") && (
+        {(activeMode === "register-candidate" || activeMode === "register-hr") && (
           <>
             <div className="bg-gray-100 rounded-lg p-1 flex gap-1 mb-5">
               <button
                 onClick={() => switchMode("register-candidate")}
-                className={`flex-1 py-2 rounded-md ${mode === "register-candidate" ? "bg-white shadow-sm text-[#ED1C24]" : "text-gray-600"}`}
+                className={`flex-1 py-2 rounded-md ${activeMode === "register-candidate" ? "bg-white shadow-sm text-[#ED1C24]" : "text-gray-600"}`}
                 style={{ fontSize: 12, fontWeight: 600 }}
                 disabled={busy}
               >
@@ -229,7 +254,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               </button>
               <button
                 onClick={() => switchMode("register-hr")}
-                className={`flex-1 py-2 rounded-md ${mode === "register-hr" ? "bg-white shadow-sm text-[#ED1C24]" : "text-gray-600"}`}
+                className={`flex-1 py-2 rounded-md ${activeMode === "register-hr" ? "bg-white shadow-sm text-[#ED1C24]" : "text-gray-600"}`}
                 style={{ fontSize: 12, fontWeight: 600 }}
                 disabled={busy}
               >
@@ -237,7 +262,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               </button>
             </div>
 
-            {mode === "register-hr" && (
+            {activeMode === "register-hr" && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-amber-800" style={{ fontSize: 12 }}>
@@ -287,7 +312,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
           </>
         )}
 
-        {mode === "verify" && (
+        {activeMode === "verify" && (
           <div className="flex flex-col items-center gap-5">
             <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center">
               <ShieldCheck className="w-7 h-7 text-green-600" />

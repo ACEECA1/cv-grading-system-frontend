@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -20,7 +20,7 @@ import { formatDate, hrApi, type HrEvaluationDetailDTO } from "../api";
 type ActiveTab = "overview" | "interview-guides" | "parsed-profile";
 
 interface CandidateEvaluationDetailProps {
-  onBack?: () => void;
+  backTo?: string;
   evaluationId?: number | string;
   candidateName?: string | null;
   jobTitle?: string | null;
@@ -203,13 +203,14 @@ function QuestionAccordion({ question, children }: { question: string | null | u
 }
 
 export function CandidateEvaluationDetail({
-  onBack,
+  backTo,
   evaluationId,
   candidateName: initialCandidateName,
   jobTitle: initialJobTitle,
   cvId: initialCvId,
   uploadDate: initialUploadDate,
 }: CandidateEvaluationDetailProps) {
+  const navigate = useNavigate();
   const params = useParams<{ evaluationId?: string }>();
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [evaluation, setEvaluation] = useState<HrEvaluationDetailDTO | null>(null);
@@ -288,11 +289,19 @@ export function CandidateEvaluationDetail({
     }
   };
 
+  const handleBack = () => {
+    if (backTo) {
+      navigate(backTo);
+      return;
+    }
+    navigate(-1);
+  };
+
   return (
     <div className="bg-gray-50 min-h-full p-4 md:p-6">
       <div className="max-w-[1200px] mx-auto space-y-6">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
           type="button"
         >

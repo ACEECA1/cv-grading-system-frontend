@@ -1,11 +1,12 @@
 import { LogOut, Settings } from "lucide-react";
 import type { ReactNode } from "react";
+import { NavLink } from "react-router-dom";
 import logoUrl from "../../imports/image.png";
 
 export type Role = "admin" | "hr" | "candidate";
 
 interface NavItem {
-  key: string;
+  to: string;
   label: string;
   icon: ReactNode;
 }
@@ -15,8 +16,6 @@ interface SidebarShellProps {
   initials: string;
   fullName: string;
   items: NavItem[];
-  active: string;
-  onNavigate: (key: string) => void;
   onLogout: () => void;
   children: ReactNode;
 }
@@ -38,8 +37,6 @@ export function SidebarShell({
   initials,
   fullName,
   items,
-  active,
-  onNavigate,
   onLogout,
   children,
 }: SidebarShellProps) {
@@ -60,18 +57,17 @@ export function SidebarShell({
 
         <nav className="flex-1 flex flex-col gap-2">
           {items.map((item) => {
-            const isActive = item.key === active;
             return (
-              <button
-                key={item.key}
-                onClick={() => onNavigate(item.key)}
-                className={`flex items-center gap-4 px-4 py-2 rounded-lg text-left transition-colors ${
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `flex items-center gap-4 px-4 py-2 rounded-lg text-left transition-colors ${
                   isActive ? "bg-[#ED1C24] text-white" : "text-[#bcc7de] hover:bg-white/5"
                 }`}
               >
                 <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
                 <span style={{ fontSize: 14 }}>{item.label}</span>
-              </button>
+              </NavLink>
             );
           })}
         </nav>

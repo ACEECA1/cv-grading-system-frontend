@@ -1,27 +1,21 @@
 import * as React from "react";
 import { useState } from "react";
 import {
-  LayoutDashboard,
   Activity,
-  UsersRound,
   Briefcase,
   ClipboardList,
   FileText,
+  LayoutDashboard,
   UserCheck,
+  UsersRound,
 } from "lucide-react";
+import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { AuthPage } from "./components/auth-page";
 import { SidebarShell, type Role } from "./components/sidebar-shell";
-import { AdminDashboard, SystemHealth, HRApprovals } from "./components/admin-views";
-import {
-  HRDashboard,
-  JobOfferCreate,
-  CandidatePipeline,
-  EvaluationDetails,
-  JobOffersList,
-  type Candidate,
-  type JobOffer,
-} from "./components/hr-views";
+import { AdminDashboard, HRApprovals, SystemHealth } from "./components/admin-views";
+import { CandidateEvaluationDetail } from "./components/CandidateEvaluationDetail";
 import { JobBoard, MyApplications } from "./components/candidate-views";
+import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
 import {
   authApi,
   clearStoredAuth,
@@ -60,23 +54,29 @@ function toSession(tokens: AuthTokensDTO): Session {
   };
 }
 
-const navByRole: Record<Role, { key: string; label: string; icon: React.ReactNode }[]> = {
+const defaultPathByRole: Record<Role, string> = {
+  admin: "/admin/dashboard",
+  hr: "/hr/dashboard",
+  candidate: "/candidate/jobs",
+};
+
+const navByRole: Record<Role, { to: string; label: string; icon: React.ReactNode }[]> = {
   admin: [
-    { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
-    { key: "approvals", label: "HR Approvals", icon: <UserCheck className="w-[18px] h-[18px]" /> },
-    { key: "submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
-    { key: "create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { key: "health", label: "System Health", icon: <Activity className="w-[18px] h-[18px]" /> },
+    { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
+    { to: "/admin/approvals", label: "HR Approvals", icon: <UserCheck className="w-[18px] h-[18px]" /> },
+    { to: "/admin/submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/admin/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/admin/health", label: "System Health", icon: <Activity className="w-[18px] h-[18px]" /> },
   ],
   hr: [
-    { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
-    { key: "submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
-    { key: "create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { key: "pipeline", label: "Candidate Pipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
+    { to: "/hr/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
+    { to: "/hr/submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/hr/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/hr/pipeline", label: "Candidate Pipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
   ],
   candidate: [
-    { key: "jobs", label: "Job Board", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { key: "applications", label: "My Applications", icon: <FileText className="w-[18px] h-[18px]" /> },
+    { to: "/candidate/jobs", label: "Job Board", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/candidate/applications", label: "My Applications", icon: <FileText className="w-[18px] h-[18px]" /> },
   ],
 };
 
@@ -92,88 +92,86 @@ function initSession(): Session | null {
   };
 }
 
-export default function App() {
-  const [session, setSession] = useState<Session | null>(() => initSession());
-  const [view, setView] = useState("dashboard");
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [selectedJob, setSelectedJob] = useState<JobOffer | null>(null);
+function parseId(value: string | undefined): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
-  if (!session) {
-    return (
-      <AuthPage
-        onAuthenticated={(tokens) => {
-          const nextSession = toSession(tokens);
-          setSession(nextSession);
-          saveStoredAuth({
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-            user: tokens.user,
-          });
-          setView(nextSession.role === "candidate" ? "jobs" : "dashboard");
-          setSelectedCandidate(null);
-          setSelectedJob(null);
-        }}
-      />
-    );
+function RoleLayout({
+  role,
+  session,
+  onLogout,
+}: {
+  role: Role;
+  session: Session;
+  onLogout: () => void;
+}) {
+  if (session.role !== role) {
+    return <Navigate to={defaultPathByRole[session.role]} replace />;
   }
 
   const initials = session.name
     .split(" ")
-    .map((p) => p[0])
+    .map((part) => part[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
-  const renderJobSubmissionsFlow = () => {
-    if (selectedCandidate) {
-      return (
-        <EvaluationDetails
-          candidate={selectedCandidate}
-          onBack={() => setSelectedCandidate(null)}
-        />
-      );
-    }
-    if (selectedJob) {
-      return (
-        <CandidatePipeline
-          job={selectedJob}
-          onSelect={setSelectedCandidate}
-          onBack={() => setSelectedJob(null)}
-        />
-      );
-    }
-    return <JobOffersList onSelectJob={setSelectedJob} />;
-  };
+  return (
+    <SidebarShell
+      role={role}
+      initials={initials}
+      fullName={session.name}
+      items={navByRole[role]}
+      onLogout={onLogout}
+    >
+      <Outlet />
+    </SidebarShell>
+  );
+}
 
-  const renderContent = () => {
-    if (session.role === "admin") {
-      if (view === "health") return <SystemHealth />;
-      if (view === "approvals") return <HRApprovals />;
-      if (view === "submissions") return renderJobSubmissionsFlow();
-      if (view === "create-job") return <JobOfferCreate onBack={() => setView("dashboard")} />;
-      return <AdminDashboard />;
-    }
-    if (session.role === "hr") {
-      if (view === "create-job") return <JobOfferCreate onBack={() => setView("dashboard")} />;
-      if (view === "submissions") return renderJobSubmissionsFlow();
-      if (view === "pipeline") {
-        if (selectedCandidate) {
-          return (
-            <EvaluationDetails
-              candidate={selectedCandidate}
-              onBack={() => setSelectedCandidate(null)}
-            />
-          );
-        }
-        return <CandidatePipeline onSelect={setSelectedCandidate} />;
-      }
-      return <HRDashboard onOpenJob={() => setView("create-job")} />;
-    }
-    if (view === "applications") return <MyApplications />;
-    return <JobBoard />;
+function SubmissionsPipelineRoute({ role }: { role: "admin" | "hr" }) {
+  const params = useParams<{ jobId: string }>();
+  const jobId = parseId(params.jobId);
+  if (jobId == null) {
+    return <Navigate to={`/${role}/submissions`} replace />;
+  }
+  const evaluationRoutePrefix = `/${role}/submissions/jobs/${jobId}/evaluations`;
+  return (
+    <CandidatePipeline
+      jobId={jobId}
+      backTo={`/${role}/submissions`}
+      evaluationRoutePrefix={evaluationRoutePrefix}
+    />
+  );
+}
+
+function SubmissionEvaluationRoute({ role }: { role: "admin" | "hr" }) {
+  const params = useParams<{ jobId: string }>();
+  const jobId = parseId(params.jobId);
+  if (jobId == null) {
+    return <Navigate to={`/${role}/submissions`} replace />;
+  }
+  return <CandidateEvaluationDetail backTo={`/${role}/submissions/jobs/${jobId}`} />;
+}
+
+export default function App() {
+  const [session, setSession] = useState<Session | null>(() => initSession());
+  const navigate = useNavigate();
+
+  const handleAuthenticated = (tokens: AuthTokensDTO) => {
+    const nextSession = toSession(tokens);
+    setSession(nextSession);
+    saveStoredAuth({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: tokens.user,
+    });
+    navigate(defaultPathByRole[nextSession.role], { replace: true });
   };
 
   const handleLogout = async () => {
+    if (!session) return;
     try {
       await authApi.logout({ refreshToken: session.refreshToken });
     } catch {
@@ -181,27 +179,62 @@ export default function App() {
     } finally {
       clearStoredAuth();
       setSession(null);
-      setView("dashboard");
-      setSelectedCandidate(null);
-      setSelectedJob(null);
+      navigate("/auth/login", { replace: true });
     }
   };
 
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="/auth/*" element={<AuthPage onAuthenticated={handleAuthenticated} />} />
+        <Route path="*" element={<Navigate to="/auth/login" replace />} />
+      </Routes>
+    );
+  }
+
   return (
-    <SidebarShell
-      role={session.role}
-      initials={initials}
-      fullName={session.name}
-      items={navByRole[session.role]}
-      active={view}
-      onNavigate={(k) => {
-        setView(k);
-        setSelectedCandidate(null);
-        setSelectedJob(null);
-      }}
-      onLogout={() => void handleLogout()}
-    >
-      {renderContent()}
-    </SidebarShell>
+    <Routes>
+      <Route path="/" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+      <Route path="/auth/*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+
+      <Route path="/admin" element={<RoleLayout role="admin" session={session} onLogout={() => void handleLogout()} />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="approvals" element={<HRApprovals />} />
+        <Route path="health" element={<SystemHealth />} />
+        <Route path="create-job" element={<JobOfferCreate backTo="/admin/dashboard" />} />
+        <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/admin/submissions/jobs/${job.id}`} />} />
+        <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="admin" />} />
+        <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
+      </Route>
+
+      <Route path="/hr" element={<RoleLayout role="hr" session={session} onLogout={() => void handleLogout()} />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<HRDashboard createJobPath="/hr/create-job" />} />
+        <Route path="create-job" element={<JobOfferCreate backTo="/hr/dashboard" />} />
+        <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/hr/submissions/jobs/${job.id}`} />} />
+        <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="hr" />} />
+        <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
+        <Route
+          path="pipeline"
+          element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluations" />}
+        />
+        <Route
+          path="pipeline/evaluations/:evaluationId"
+          element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
+        />
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
+      </Route>
+
+      <Route path="/candidate" element={<RoleLayout role="candidate" session={session} onLogout={() => void handleLogout()} />}>
+        <Route index element={<Navigate to="jobs" replace />} />
+        <Route path="jobs" element={<JobBoard />} />
+        <Route path="applications" element={<MyApplications />} />
+        <Route path="*" element={<Navigate to="jobs" replace />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+    </Routes>
   );
 }

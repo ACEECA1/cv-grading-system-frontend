@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -8,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { ArrowLeft, Briefcase, FileText, Loader2, Sparkles, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { formatDate, formatScoreOutOfTen, hrApi, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
-import { CandidateEvaluationDetail } from "./CandidateEvaluationDetail";
 
 function statusClass(status: string): string {
   if (status === "SCORED" || status === "PUBLISHED") return "bg-green-50 text-green-700";
@@ -70,7 +70,8 @@ function mapCandidate(value: HrEvaluationSummaryDTO): Candidate {
   };
 }
 
-export function HRDashboard({ onOpenJob }: { onOpenJob: () => void }) {
+export function HRDashboard({ createJobPath }: { createJobPath: string }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [totalCvsProcessed, setTotalCvsProcessed] = useState(0);
@@ -112,7 +113,7 @@ export function HRDashboard({ onOpenJob }: { onOpenJob: () => void }) {
             Live recruitment stats from backend data.
           </p>
         </div>
-        <Button onClick={onOpenJob} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
+        <Button onClick={() => navigate(createJobPath)} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
           + New Job Offer
         </Button>
       </div>
@@ -167,7 +168,8 @@ export function HRDashboard({ onOpenJob }: { onOpenJob: () => void }) {
   );
 }
 
-export function JobOfferCreate({ onBack }: { onBack: () => void }) {
+export function JobOfferCreate({ backTo }: { backTo: string }) {
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [rawText, setRawText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -206,7 +208,7 @@ export function JobOfferCreate({ onBack }: { onBack: () => void }) {
             Submit a title and raw description. Backend will process and publish when parsing succeeds.
           </p>
         </div>
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={() => navigate(backTo)}>
           Cancel
         </Button>
       </div>
@@ -238,7 +240,8 @@ export function JobOfferCreate({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function JobOffersList({ onSelectJob }: { onSelectJob: (job: JobOffer) => void }) {
+export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobOffer) => string }) {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -290,7 +293,7 @@ export function JobOffersList({ onSelectJob }: { onSelectJob: (job: JobOffer) =>
             return (
               <Card
                 key={job.id}
-                onClick={() => onSelectJob(job)}
+                onClick={() => navigate(onSelectJobPath(job))}
                 className="p-6 cursor-pointer hover:border-[#ED1C24] hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
@@ -332,14 +335,15 @@ export function JobOffersList({ onSelectJob }: { onSelectJob: (job: JobOffer) =>
 }
 
 export function CandidatePipeline({
-  onSelect,
-  job,
-  onBack,
+  jobId,
+  evaluationRoutePrefix,
+  backTo,
 }: {
-  onSelect: (candidate: Candidate) => void;
-  job?: JobOffer;
-  onBack?: () => void;
+  jobId?: number;
+  evaluationRoutePrefix: string;
+  backTo?: string;
 }) {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [minScore, setMinScore] = useState("");
   const [loading, setLoading] = useState(true);
@@ -356,7 +360,7 @@ export function CandidatePipeline({
         const data = await hrApi.listEvaluations({
           page: page - 1,
           size: 10,
-          jobId: job?.id,
+          jobId,
           minScore: Number.isFinite(minScoreNumber) ? minScoreNumber : undefined,
         });
         if (!cancelled) setEvaluations(data);
@@ -370,16 +374,16 @@ export function CandidatePipeline({
     return () => {
       cancelled = true;
     };
-  }, [job?.id, minScore, page]);
+  }, [jobId, minScore, page]);
 
   const rows = useMemo(() => (evaluations?.content ?? []).map(mapCandidate), [evaluations]);
   const totalPages = Math.max(1, evaluations?.totalPages ?? 1);
-  const title = job ? `${job.title} · Evaluations` : "Candidate Pipeline";
+  const title = jobId ? `Job #${jobId} · Evaluations` : "Candidate Pipeline";
 
   return (
     <div className="space-y-6 max-w-[1200px]">
-      {onBack && (
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" style={{ fontSize: 13 }}>
+      {backTo && (
+        <button onClick={() => navigate(backTo)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" style={{ fontSize: 13 }}>
           <ArrowLeft className="w-4 h-4" /> Back to job offers
         </button>
       )}
@@ -437,7 +441,7 @@ export function CandidatePipeline({
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => onSelect(candidate)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`${evaluationRoutePrefix}/${candidate.evaluationId}`)}>
                       View
                     </Button>
                   </TableCell>
@@ -457,18 +461,5 @@ export function CandidatePipeline({
         </Button>
       </div>
     </div>
-  );
-}
-
-export function EvaluationDetails({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
-  return (
-    <CandidateEvaluationDetail
-      onBack={onBack}
-      evaluationId={candidate.evaluationId}
-      candidateName={candidate.candidateName}
-      jobTitle={candidate.jobTitle}
-      cvId={candidate.cvId}
-      uploadDate={candidate.cvUploadDate}
-    />
   );
 }

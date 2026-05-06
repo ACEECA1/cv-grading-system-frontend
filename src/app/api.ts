@@ -28,6 +28,14 @@ export interface UserDTO {
   updatedAt: string;
 }
 
+export interface UpdateUserDTO {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export interface AuthTokensDTO {
   accessToken: string;
   refreshToken: string;
@@ -447,6 +455,12 @@ export const authApi = {
       { auth: false },
     ),
   logout: (payload: { refreshToken: string }) => requestJson<void>("/api/auth/logout", { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const userApi = {
+  getCurrentUser: () => requestJson<UserDTO>("/api/users/me"),
+  updateUserProfile: (data: UpdateUserDTO) =>
+    requestJson<UserDTO>("/api/users/me", { method: "PUT", body: JSON.stringify(data) }),
 };
 
 export const candidateApi = {

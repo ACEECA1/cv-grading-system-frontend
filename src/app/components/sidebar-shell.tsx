@@ -13,7 +13,6 @@ interface NavItem {
 
 interface SidebarShellProps {
   role: Role;
-  initials: string;
   fullName: string;
   items: NavItem[];
   onLogout: () => void;
@@ -34,7 +33,6 @@ const roleBadgeColor: Record<Role, string> = {
 
 export function SidebarShell({
   role,
-  initials,
   fullName,
   items,
   onLogout,
@@ -97,15 +95,15 @@ export function SidebarShell({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
-              <Settings className="w-[18px] h-[18px]" />
-            </button>
-            <div
-              className="w-8 h-8 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center"
-              style={{ fontSize: 12, fontWeight: 600 }}
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `p-2 rounded-full transition-colors ${isActive ? "text-[#ED1C24] bg-red-50" : "hover:bg-gray-100 text-gray-600"}`
+              }
+              aria-label="Settings"
             >
-              {initials}
-            </div>
+              <Settings className="w-[18px] h-[18px]" />
+            </NavLink>
           </div>
         </header>
 

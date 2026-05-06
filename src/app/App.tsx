@@ -19,6 +19,7 @@ import { CandidateJobDetail } from "./components/CandidateJobDetail";
 import { JobBoard, MyApplications } from "./components/candidate-views";
 import { HrJobOfferDetail } from "./components/HrJobOfferDetail";
 import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
+import { SettingsPage } from "./components/SettingsPage";
 import {
   authApi,
   clearStoredAuth,
@@ -113,17 +114,9 @@ function RoleLayout({
     return <Navigate to={defaultPathByRole[session.role]} replace />;
   }
 
-  const initials = session.name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   return (
     <SidebarShell
       role={role}
-      initials={initials}
       fullName={session.name}
       items={navByRole[role]}
       onLogout={onLogout}
@@ -203,6 +196,9 @@ export default function App() {
       <Route path="/login" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
       <Route path="/forgot-password" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
       <Route path="/auth/*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+      <Route path="/settings" element={<RoleLayout role={session.role} session={session} onLogout={() => void handleLogout()} />}>
+        <Route index element={<SettingsPage />} />
+      </Route>
 
       <Route path="/admin" element={<RoleLayout role="admin" session={session} onLogout={() => void handleLogout()} />}>
         <Route index element={<Navigate to="dashboard" replace />} />

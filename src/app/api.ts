@@ -234,7 +234,12 @@ export interface StoredAuth {
 }
 
 const STORAGE_KEY = "talent-portal-auth";
-const API_BASE_URL = (((import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL) ?? "http://localhost:8080").replace(/\/+$/, "");
+const ENV_API_BASE_URL = (import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL;
+const DEFAULT_API_BASE_URL = (() => {
+  if (typeof window === "undefined") return "http://localhost:8080";
+  return `${window.location.protocol}//${window.location.hostname}:8080`;
+})();
+const API_BASE_URL = (ENV_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/+$/, "");
 let accessToken: string | null = null;
 
 export function formatScoreOutOfTen(score: number | null | undefined): string {

@@ -1,0 +1,422 @@
+export interface ApiResponseEnvelope<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface UserDTO {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: "CANDIDATE" | "HR" | "ADMIN";
+  isEnabled: boolean;
+  hrApprovalStatus: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthTokensDTO {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresInMs: number;
+  user: UserDTO;
+}
+
+export interface ExperienceRangeDTO {
+  minYears: number | null;
+  maxYears: number | null;
+}
+
+export interface StructuredJdDTO {
+  id: number;
+  title: string;
+  companyName: string | null;
+  requiredSkills: string[];
+  preferredSkills: string[];
+  experienceRange: ExperienceRangeDTO | null;
+  responsibilities: string[];
+  qualifications: string[];
+  workLocation: string | null;
+  employmentType: string | null;
+}
+
+export interface JobOfferDTO {
+  id: number;
+  title: string;
+  rawText: string;
+  status: "DRAFT" | "PUBLISHED" | "CLOSED" | "FAILED";
+  jdRequestId: string | null;
+  structuredJd: StructuredJdDTO | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadCvResponseDTO {
+  cvId: number;
+  evaluationId: number;
+  cvStatus: "UPLOADED" | "OCR_DONE" | "SENT_FOR_EVALUATION" | "EVALUATED" | "FAILED";
+  evaluationStatus: "WAITING" | "SCORED" | "FAILED";
+  uploadDate: string;
+}
+
+export interface CandidateEvaluationDTO {
+  id: number;
+  status: "WAITING" | "SCORED" | "FAILED";
+  overallScore: number | null;
+  detailsJson: string | null;
+  recommendation: string | null;
+  reasoning: string | null;
+  matchedSkills: string[];
+  missingSkills: Array<{
+    skillName: string;
+    importance: string;
+  }>;
+  experienceAlignment: {
+    yearsRequired: number | null;
+    yearsCandidate: number | null;
+    matchPercentage: number | null;
+  } | null;
+  educationMatch: {
+    requiredDegree: string | null;
+    candidateDegree: string | null;
+    matchStatus: string | null;
+  } | null;
+}
+
+export interface CandidateSubmissionDTO {
+  cvId: number;
+  fileUrl: string | null;
+  rawText: string | null;
+  cvStatus: "UPLOADED" | "OCR_DONE" | "SENT_FOR_EVALUATION" | "EVALUATED" | "FAILED";
+  uploadDate: string;
+  jobOffer: JobOfferDTO;
+  evaluation: CandidateEvaluationDTO | null;
+}
+
+export interface DashboardStatsDTO {
+  totalCvsProcessed: number;
+  averageMatchScore: number;
+  pendingHrApprovals: number;
+}
+
+export interface HrEvaluationSummaryDTO {
+  evaluationId: number;
+  status: "WAITING" | "SCORED" | "FAILED";
+  overallScore: number | null;
+  cvId: number | null;
+  cvUploadDate: string | null;
+  candidateId: number | null;
+  candidateFullName: string | null;
+  jobOfferId: number | null;
+  jobOfferTitle: string | null;
+}
+
+export interface ExternalServiceStatusDTO {
+  name: string;
+  url: string | null;
+  reachable: boolean;
+  statusCode: number | null;
+  message: string | null;
+}
+
+export interface SystemHealthDTO {
+  apiStatus: string;
+  timestamp: string;
+  externalServices: ExternalServiceStatusDTO[];
+}
+
+export interface StoredAuth {
+  accessToken: string;
+  refreshToken: string;
+  user: UserDTO;
+}
+
+const STORAGE_KEY = "talent-portal-auth";
+const API_BASE_URL = (((import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL) ?? "http://localhost:8080").replace(/\/+$/, "");
+let accessToken: string | null = null;
+
+export function formatScoreOutOfTen(score: number | null | undefined): string {
+  if (score == null || Number.isNaN(score)) return "N/A";
+  const rounded = Math.round(score * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}/10`;
+}
+
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString();
+}
+
+function parseMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const message = "message" in payload ? (payload as { message?: unknown }).message : null;
+  const data = "data" in payload ? (payload as { data?: unknown }).data : null;
+
+  if (typeof message === "string" && message.trim()) {
+    if (message === "Validation failed" && data && typeof data === "object") {
+      const entries = Object.entries(data as Record<string, unknown>)
+        .filter(([, value]) => typeof value === "string" && value.trim())
+        .map(([field, value]) => `${field}: ${value as string}`);
+      if (entries.length > 0) return entries.join(" | ");
+    }
+    return message;
+  }
+
+  if (typeof data === "string" && data.trim()) {
+    return data;
+  }
+
+  return fallback;
+}
+
+function parseFileName(contentDisposition: string | null): string | null {
+  if (!contentDisposition) return null;
+  const match = /filename="?([^"]+)"?/i.exec(contentDisposition);
+  return match?.[1] ?? null;
+}
+
+function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    searchParams.set(key, String(value));
+  });
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function loadStoredAuth(): StoredAuth | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StoredAuth;
+    if (!parsed?.accessToken || !parsed?.refreshToken || !parsed?.user) return null;
+    setAccessToken(parsed.accessToken);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredAuth(value: StoredAuth) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  }
+  setAccessToken(value.accessToken);
+}
+
+export function clearStoredAuth() {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+  setAccessToken(null);
+}
+
+async function requestJson<T>(
+  path: string,
+  init: RequestInit = {},
+  options: { auth?: boolean } = {},
+): Promise<T> {
+  const auth = options.auth ?? true;
+  const headers = new Headers(init.headers ?? {});
+  if (auth && accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  if (!(init.body instanceof FormData) && init.body !== undefined && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  headers.set("Accept", "application/json");
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const text = await response.text();
+  let payload: unknown = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text) as unknown;
+    } catch {
+      payload = null;
+    }
+  }
+  const message = parseMessage(payload, `Request failed (${response.status})`);
+  if (!response.ok) throw new Error(message);
+
+  if (payload && typeof payload === "object" && "success" in payload && "data" in payload) {
+    const envelope = payload as ApiResponseEnvelope<T>;
+    if (!envelope.success) throw new Error(envelope.message || "Request failed");
+    return envelope.data;
+  }
+
+  return payload as T;
+}
+
+async function downloadWithAuth(path: string, fallbackFileName: string): Promise<void> {
+  const headers = new Headers();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { method: "GET", headers });
+  if (!response.ok) {
+    const text = await response.text();
+    let payload: unknown = null;
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = null;
+      }
+    }
+    const message = parseMessage(payload, `Download failed (${response.status})`);
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const fileName = parseFileName(response.headers.get("Content-Disposition")) ?? fallbackFileName;
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export const authApi = {
+  registerCandidate: (payload: {
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) =>
+    requestJson<UserDTO>(
+      "/api/auth/register/candidate",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  registerHr: (payload: {
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) =>
+    requestJson<UserDTO>(
+      "/api/auth/register/hr",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  verify: (payload: { email: string; code: string }) =>
+    requestJson<void>(
+      "/api/auth/verify",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  resendVerification: (payload: { email: string }) =>
+    requestJson<void>(
+      "/api/auth/resend-verification",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  login: (payload: { usernameOrEmail: string; password: string }) =>
+    requestJson<AuthTokensDTO>(
+      "/api/auth/login",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  refresh: (payload: { refreshToken: string }) =>
+    requestJson<AuthTokensDTO>(
+      "/api/auth/refresh",
+      { method: "POST", body: JSON.stringify(payload) },
+      { auth: false },
+    ),
+  logout: (payload: { refreshToken: string }) => requestJson<void>("/api/auth/logout", { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const candidateApi = {
+  listJobOffers: (params: { page: number; size: number; location?: string }) =>
+    requestJson<PageResponse<JobOfferDTO>>(
+      `/api/candidate/job-offers${buildQuery({
+        page: params.page,
+        size: params.size,
+        location: params.location,
+      })}`,
+    ),
+  uploadCv: (jobOfferId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestJson<UploadCvResponseDTO>(`/api/candidate/job-offers/${jobOfferId}/cv`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+  listSubmissions: () => requestJson<CandidateSubmissionDTO[]>("/api/candidate/submissions"),
+  downloadMyCv: (jobOfferId: number) => downloadWithAuth(`/api/candidate/submissions/${jobOfferId}/cv/download`, `submission-${jobOfferId}.pdf`),
+  withdrawSubmission: (jobOfferId: number) => requestJson<void>(`/api/candidate/submissions/${jobOfferId}/cv`, { method: "DELETE" }),
+};
+
+export const hrApi = {
+  dashboardStats: () => requestJson<DashboardStatsDTO>("/api/hr/dashboard/stats"),
+  listJobOffers: (params: {
+    page: number;
+    size: number;
+    location?: string;
+    status?: "DRAFT" | "PUBLISHED" | "CLOSED" | "FAILED";
+  }) =>
+    requestJson<PageResponse<JobOfferDTO>>(
+      `/api/hr/job-offers${buildQuery({
+        page: params.page,
+        size: params.size,
+        location: params.location,
+        status: params.status,
+      })}`,
+    ),
+  createJobOffer: (payload: { title: string; rawText: string }) =>
+    requestJson<JobOfferDTO>("/api/hr/job-offers", { method: "POST", body: JSON.stringify(payload) }),
+  listEvaluations: (params: { page: number; size: number; jobId?: number; minScore?: number }) =>
+    requestJson<PageResponse<HrEvaluationSummaryDTO>>(
+      `/api/hr/evaluations${buildQuery({
+        page: params.page,
+        size: params.size,
+        jobId: params.jobId,
+        minScore: params.minScore,
+      })}`,
+    ),
+  downloadEvaluationCv: (evaluationId: number) =>
+    downloadWithAuth(`/api/hr/evaluations/${evaluationId}/cv/download`, `evaluation-${evaluationId}-cv.pdf`),
+};
+
+export const adminApi = {
+  listPendingHr: () => requestJson<UserDTO[]>("/api/admin/hr/pending"),
+  approveHr: (userId: number) => requestJson<UserDTO>(`/api/admin/hr/${userId}/approve`, { method: "PUT" }),
+};
+
+export const systemApi = {
+  health: () => requestJson<SystemHealthDTO>("/api/system/health", {}, { auth: false }),
+};
+
+loadStoredAuth();

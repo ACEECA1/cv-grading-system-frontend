@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Activity, CheckCircle2, Mail, UserCheck, Users } from "lucide-react";
+import { Activity, CheckCircle2, Loader2, Mail, UserCheck, Users } from "lucide-react";
 import { adminApi, formatDate, formatScoreOutOfTen, hrApi, systemApi, type ExternalServiceStatusDTO, type UserDTO } from "../api";
 
 function MetricCard({

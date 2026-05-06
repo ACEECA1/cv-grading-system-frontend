@@ -97,6 +97,52 @@ export interface CandidateEvaluationDTO {
   } | null;
 }
 
+export interface HrEvaluationDetailDTO extends Omit<CandidateEvaluationDTO, "detailsJson"> {
+  cvId: number | null;
+  cvUploadDate: string | null;
+  candidateId: number | null;
+  candidateFullName: string | null;
+  jobOfferId: number | null;
+  jobOfferTitle: string | null;
+  technicalQuestions: Array<{
+    question: string | null;
+    expectedAnswer: string | null;
+    difficulty: string | null;
+    skillArea: string | null;
+    bluffIndicator: boolean | null;
+    followUpQuestions: string[];
+  }>;
+  hrQuestions: Array<{
+    question: string | null;
+    psychologicalIntent: string | null;
+    idealResponseIndicators: string[];
+    redFlags: string[];
+    followUpProbes: string[];
+    evaluationCriteria: string | null;
+  }>;
+  profileData?: {
+    personalInfo?: {
+      email?: string | null;
+      phone?: string | null;
+      location?: string | null;
+      linkedin?: string | null;
+    } | null;
+    experience?: Array<{
+      title?: string | null;
+      company?: string | null;
+      duration?: string | null;
+      description?: string | null;
+    }> | null;
+    education?: Array<{
+      degree?: string | null;
+      institution?: string | null;
+      year?: string | null;
+    }> | null;
+    languages?: string[] | null;
+    skills?: string[] | null;
+  } | null;
+}
+
 export interface CandidateSubmissionDTO {
   cvId: number;
   fileUrl: string | null;
@@ -406,6 +452,8 @@ export const hrApi = {
         minScore: params.minScore,
       })}`,
     ),
+  getEvaluationById: (evaluationId: number) =>
+    requestJson<HrEvaluationDetailDTO>(`/api/hr/evaluations/${evaluationId}`),
   downloadEvaluationCv: (evaluationId: number) =>
     downloadWithAuth(`/api/hr/evaluations/${evaluationId}/cv/download`, `evaluation-${evaluationId}-cv.pdf`),
 };

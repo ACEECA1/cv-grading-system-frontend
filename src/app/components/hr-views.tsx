@@ -5,9 +5,10 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { ArrowLeft, Briefcase, Download, FileText, Loader2, Sparkles, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, FileText, Loader2, Sparkles, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { formatDate, formatScoreOutOfTen, hrApi, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
+import { CandidateEvaluationDetail } from "./CandidateEvaluationDetail";
 
 function statusClass(status: string): string {
   if (status === "SCORED" || status === "PUBLISHED") return "bg-green-50 text-green-700";
@@ -460,77 +461,14 @@ export function CandidatePipeline({
 }
 
 export function EvaluationDetails({ candidate, onBack }: { candidate: Candidate; onBack: () => void }) {
-  const [downloading, setDownloading] = useState(false);
-  const [error, setError] = useState("");
-
-  const downloadCv = async () => {
-    setError("");
-    setDownloading(true);
-    try {
-      await hrApi.downloadEvaluationCv(candidate.evaluationId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download CV.");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
-    <div className="space-y-6 max-w-[900px]">
-      <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" style={{ fontSize: 13 }}>
-        <ArrowLeft className="w-4 h-4" /> Back to pipeline
-      </button>
-
-      <Card className="p-6 flex items-center gap-8 border-l-4 border-l-[#ED1C24]">
-        {candidate.overallScore == null ? (
-          <div className="w-[100px] h-[100px] rounded-full bg-gray-100 text-gray-500 flex items-center justify-center" style={{ fontSize: 14, fontWeight: 700 }}>
-            N/A
-          </div>
-        ) : (
-          <MatchRing score={candidate.overallScore} size={100} />
-        )}
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h1 style={{ fontSize: 24, fontWeight: 700 }}>{candidate.candidateName}</h1>
-            <span className={`px-2 py-0.5 rounded ${statusClass(candidate.status)}`} style={{ fontSize: 11, fontWeight: 700 }}>
-              {candidate.status}
-            </span>
-          </div>
-          <div className="text-gray-600 flex items-center gap-4" style={{ fontSize: 14 }}>
-            <span className="flex items-center gap-1.5"><Briefcase className="w-4 h-4" /> {candidate.jobTitle}</span>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6 space-y-4">
-        <h3 style={{ fontSize: 16, fontWeight: 600 }}>Evaluation Metadata</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex justify-between border-b border-gray-100 pb-2">
-            <span className="text-gray-500">Evaluation ID</span>
-            <span className="font-medium">{candidate.evaluationId}</span>
-          </div>
-          <div className="flex justify-between border-b border-gray-100 pb-2">
-            <span className="text-gray-500">CV ID</span>
-            <span className="font-medium">{candidate.cvId ?? "—"}</span>
-          </div>
-          <div className="flex justify-between border-b border-gray-100 pb-2">
-            <span className="text-gray-500">Uploaded</span>
-            <span className="font-medium">{formatDate(candidate.cvUploadDate)}</span>
-          </div>
-          <div className="flex justify-between border-b border-gray-100 pb-2">
-            <span className="text-gray-500">Score</span>
-            <span className="font-medium">{formatScoreOutOfTen(candidate.overallScore)}</span>
-          </div>
-        </div>
-
-        {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>}
-        <div className="pt-2">
-          <Button onClick={() => void downloadCv()} disabled={downloading} className="bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2">
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download CV
-          </Button>
-        </div>
-      </Card>
-    </div>
+    <CandidateEvaluationDetail
+      onBack={onBack}
+      evaluationId={candidate.evaluationId}
+      candidateName={candidate.candidateName}
+      jobTitle={candidate.jobTitle}
+      cvId={candidate.cvId}
+      uploadDate={candidate.cvUploadDate}
+    />
   );
 }

@@ -79,7 +79,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegister = () => {
     clearMessages();
     const trimmedUsername = username.trim();
     const trimmedFirstName = name.first.trim();
@@ -115,28 +115,27 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
       return;
     }
 
+    const registerMode: AuthMode = activeMode === "register-hr" ? "register-hr" : "register-candidate";
+    const payload = {
+      username: trimmedUsername,
+      firstName: trimmedFirstName,
+      lastName: trimmedLastName,
+      email: trimmedEmail,
+      password,
+    };
+
     setBusy(true);
-    try {
-      const payload = {
-        username: trimmedUsername,
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
-        email: trimmedEmail,
-        password,
-      };
-      if (activeMode === "register-hr") {
-        await authApi.registerHr(payload);
-      } else {
-        await authApi.registerCandidate(payload);
-      }
-      setVerificationEmail(trimmedEmail);
-      navigate(authPathByMode.verify);
-      setInfo("Account created. Enter the verification code sent to your email.");
-    } catch (err) {
+    setVerificationEmail(trimmedEmail);
+    setInfo("Verification code sent!");
+    navigate(authPathByMode.verify);
+    setBusy(false);
+
+    const request = registerMode === "register-hr" ? authApi.registerHr(payload) : authApi.registerCandidate(payload);
+    void request.catch((err) => {
+      setInfo("");
       setError(err instanceof Error ? err.message : "Registration failed.");
-    } finally {
-      setBusy(false);
-    }
+      navigate(authPathByMode[registerMode]);
+    });
   };
 
   const handleVerify = async () => {

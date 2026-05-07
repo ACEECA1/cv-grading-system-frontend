@@ -17,10 +17,12 @@ export function ForgotPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const handleRequestCode = async () => {
+  const handleRequestCode = () => {
     setError("");
+    setInfo("");
     setSuccess(false);
     const trimmedEmail = email.trim();
     if (!isValidEmail(trimmedEmail)) {
@@ -29,19 +31,21 @@ export function ForgotPasswordPage() {
     }
 
     setBusy(true);
-    try {
-      await authApi.requestPasswordReset(trimmedEmail);
-      setEmail(trimmedEmail);
-      setStep("reset");
-    } catch (err) {
+    setEmail(trimmedEmail);
+    setStep("reset");
+    setInfo("Verification code sent!");
+    setBusy(false);
+
+    void authApi.requestPasswordReset(trimmedEmail).catch((err) => {
+      setInfo("");
       setError(err instanceof Error ? err.message : "Failed to send reset code.");
-    } finally {
-      setBusy(false);
-    }
+      setStep("request");
+    });
   };
 
   const handleResetPassword = async () => {
     setError("");
+    setInfo("");
     setSuccess(false);
     const trimmedEmail = email.trim();
     const trimmedCode = code.trim();
@@ -79,6 +83,7 @@ export function ForgotPasswordPage() {
               Enter your email address and we will send you a verification code.
             </p>
 
+            {info && <p className="text-sm text-green-600 mb-4">{info}</p>}
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
             <div className="space-y-2 mb-5">
@@ -120,6 +125,7 @@ export function ForgotPasswordPage() {
               Enter the verification code sent to your email and your new password.
             </p>
 
+            {info && <p className="text-sm text-green-600 mb-4">{info}</p>}
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
             {success && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">

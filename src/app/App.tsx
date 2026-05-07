@@ -20,6 +20,7 @@ import { JobBoard, MyApplications } from "./components/candidate-views";
 import { HrJobOfferDetail } from "./components/HrJobOfferDetail";
 import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
 import { SettingsPage } from "./components/SettingsPage";
+import { useDynamicTitle } from "./hooks/useDynamicTitle";
 import {
   authApi,
   clearStoredAuth,
@@ -154,6 +155,7 @@ function SubmissionEvaluationRoute({ role }: { role: "admin" | "hr" }) {
 export default function App() {
   const [session, setSession] = useState<Session | null>(() => initSession());
   const navigate = useNavigate();
+  useDynamicTitle();
 
   const handleAuthenticated = (tokens: AuthTokensDTO) => {
     const nextSession = toSession(tokens);

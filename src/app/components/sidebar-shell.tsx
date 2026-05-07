@@ -1,7 +1,7 @@
 import { LogOut, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import logoUrl from "../../imports/image.png";
+const logoUrl = new URL("../../imports/image.png", import.meta.url).href;
 
 export type Role = "admin" | "hr" | "candidate";
 

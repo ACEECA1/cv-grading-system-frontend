@@ -119,7 +119,6 @@ export interface CandidateEvaluationDTO {
   id: number;
   status: "WAITING" | "SCORED" | "FAILED";
   overallScore: number | null;
-  detailsJson: string | null;
   recommendation: string | null;
   reasoning: string | null;
   matchedSkills: string[];
@@ -139,7 +138,7 @@ export interface CandidateEvaluationDTO {
   } | null;
 }
 
-export interface HrEvaluationDetailDTO extends Omit<CandidateEvaluationDTO, "detailsJson"> {
+export interface HrEvaluationDetailDTO extends CandidateEvaluationDTO {
   cvId: number | null;
   cvUploadDate: string | null;
   candidateId: number | null;

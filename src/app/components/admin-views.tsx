@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Activity, CheckCircle2, Loader2, Mail, UserCheck, Users } from "lucide-react";
+import { Activity, CheckCircle2, Circle, Loader2, Mail, RefreshCw, UserCheck, Users } from "lucide-react";
 import { adminApi, formatDate, formatScoreOutOfTen, hrApi, systemApi, type ExternalServiceStatusDTO, type UserDTO } from "../api";
 
 function MetricCard({
@@ -106,104 +106,204 @@ export function AdminDashboard() {
   );
 }
 
-function serviceStatusBadge(service: ExternalServiceStatusDTO): { className: string; label: string } {
-  if (service.reachable) return { className: "bg-green-50 text-green-700", label: "Reachable" };
-  return { className: "bg-red-50 text-red-700", label: "Unavailable" };
+type HealthLevel = "operational" | "degraded" | "critical";
+
+function normalizeServiceName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function findServiceByAlias(
+  services: ExternalServiceStatusDTO[],
+  aliases: string[],
+): ExternalServiceStatusDTO | null {
+  return (
+    services.find((service) => {
+      const normalized = normalizeServiceName(service.name);
+      return aliases.some((alias) => normalized.includes(alias));
+    }) ?? null
+  );
+}
+
+function latencyFromMessage(message: string | null, fallback: number | null): number | null {
+  if (message) {
+    const match = message.match(/(\d+)\s*ms/i);
+    if (match) return Number.parseInt(match[1], 10);
+  }
+  return fallback;
+}
+
+function formatRelativeTime(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  const diffMs = Math.max(Date.now() - date.getTime(), 0);
+  if (diffMs < 60_000) return "Just now";
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function resolveHealthLevel(reachable: boolean, latencyMs: number | null): HealthLevel {
+  if (!reachable) return "critical";
+  if (latencyMs != null && latencyMs > 1000) return "degraded";
+  return "operational";
+}
+
+function StatusBadge({ checking, level }: { checking: boolean; level: HealthLevel }) {
+  if (checking) {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+        <Circle className="h-2.5 w-2.5 fill-current text-gray-500" />
+        Checking...
+      </span>
+    );
+  }
+
+  if (level === "critical") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+        <Circle className="h-2.5 w-2.5 animate-pulse fill-current text-red-600" />
+        Critical
+      </span>
+    );
+  }
+
+  if (level === "degraded") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+        <Circle className="h-2.5 w-2.5 fill-current text-amber-500" />
+        Degraded
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+      <Circle className="h-2.5 w-2.5 fill-current text-green-600" />
+      Operational
+    </span>
+  );
 }
 
 export function SystemHealth() {
-  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
+  const [apiStatus, setApiStatus] = useState("");
   const [services, setServices] = useState<ExternalServiceStatusDTO[]>([]);
-  const [timestamp, setTimestamp] = useState<string | null>(null);
+  const [timestamp, setTimestamp] = useState<string>(new Date().toISOString());
+  const [requestLatencyMs, setRequestLatencyMs] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await systemApi.health();
-        if (cancelled) return;
-        setServices(data.externalServices ?? []);
-        setTimestamp(data.timestamp);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load system health.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
+  const loadHealth = useCallback(async () => {
+    const startedAt = performance.now();
+    setChecking(true);
+    setError("");
+    try {
+      const data = await systemApi.health();
+      const elapsed = Math.round(performance.now() - startedAt);
+      setApiStatus(data.apiStatus ?? "");
+      setServices(data.externalServices ?? []);
+      setTimestamp(data.timestamp || new Date().toISOString());
+      setRequestLatencyMs(elapsed);
+    } catch (err) {
+      setApiStatus("DOWN");
+      setServices([]);
+      setTimestamp(new Date().toISOString());
+      setRequestLatencyMs(null);
+      setError(err instanceof Error ? err.message : "Failed to load system health.");
+    } finally {
+      setChecking(false);
+    }
   }, []);
 
+  useEffect(() => {
+    void loadHealth();
+  }, [loadHealth]);
+
+  const ocrService = findServiceByAlias(services, ["ocrservice", "ocr", "pdf"]);
+  const aiService = findServiceByAlias(services, ["aiengine", "n8n", "evaluation", "llm"]);
+  const databaseService = findServiceByAlias(services, ["database", "postgres", "postgresql", "mysql", "db"]);
+  const mainApiReachable = apiStatus.toUpperCase() === "UP" && !error;
+
+  const cards = [
+    {
+      name: "Main API",
+      latencyMs: requestLatencyMs,
+      reachable: mainApiReachable,
+      lastChecked: timestamp,
+    },
+    {
+      name: "Database",
+      latencyMs: latencyFromMessage(databaseService?.message ?? null, requestLatencyMs),
+      reachable: databaseService ? databaseService.reachable : mainApiReachable,
+      lastChecked: timestamp,
+    },
+    {
+      name: "OCR Service",
+      latencyMs: latencyFromMessage(ocrService?.message ?? null, requestLatencyMs),
+      reachable: ocrService?.reachable ?? false,
+      lastChecked: timestamp,
+    },
+    {
+      name: "AI Engine",
+      latencyMs: latencyFromMessage(aiService?.message ?? null, requestLatencyMs),
+      reachable: aiService?.reachable ?? false,
+      lastChecked: timestamp,
+    },
+  ];
+
   return (
-    <div className="space-y-6 max-w-[1200px]">
-      <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>System Health Monitor</h1>
-        <p className="text-gray-600" style={{ fontSize: 14 }}>
-          External service checks from backend probing.
-        </p>
+    <div className="max-w-[1200px] space-y-6 bg-gray-50">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700 }}>System Health</h1>
+          <p className="text-gray-600" style={{ fontSize: 14 }}>
+            Real-time status of critical platform services.
+          </p>
+        </div>
+        <Button
+          onClick={() => void loadHealth()}
+          disabled={checking}
+          className="bg-[#ED1C24] text-white hover:bg-[#c81820]"
+        >
+          <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} />
+          {checking ? "Checking..." : "Refresh"}
+        </Button>
       </div>
 
       {error && (
-        <Card className="p-4 border-red-200 bg-red-50 text-red-700" style={{ fontSize: 13 }}>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700" style={{ fontSize: 13 }}>
           {error}
-        </Card>
+        </div>
       )}
 
-      {loading ? (
-        <Card className="p-6 text-gray-500">Loading health status...</Card>
-      ) : (
-        <>
-          {timestamp && (
-            <div className="text-sm text-gray-500">
-              Last check: {formatDate(timestamp)}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {cards.map((service) => {
+          const level = resolveHealthLevel(service.reachable, service.latencyMs);
+          return (
+            <div key={service.name} className="rounded-lg border border-gray-200 bg-white p-6">
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
+                <StatusBadge checking={checking} level={level} />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Latency</span>
+                  <span className="font-semibold text-gray-900">
+                    {checking ? "Checking..." : service.latencyMs != null ? `${service.latencyMs}ms` : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Last Checked</span>
+                  <span className="font-semibold text-gray-900">{formatRelativeTime(service.lastChecked)}</span>
+                </div>
+              </div>
             </div>
-          )}
-          <div className="grid grid-cols-2 gap-6">
-            {services.map((service) => {
-              const badge = serviceStatusBadge(service);
-              return (
-                <Card key={service.name} className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${service.reachable ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}>
-                        <Activity className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 600 }}>{service.name}</div>
-                        <div className="text-gray-500" style={{ fontSize: 12 }}>
-                          {service.url || "No URL configured"}
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`${badge.className} px-2.5 py-1 rounded-md flex items-center gap-1.5`} style={{ fontSize: 12, fontWeight: 600 }}>
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {badge.label}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-gray-600" style={{ fontSize: 13 }}>
-                    <div>
-                      <div className="text-gray-500" style={{ fontSize: 11 }}>
-                        STATUS CODE
-                      </div>
-                      <div style={{ fontSize: 16, fontWeight: 600, color: "#191c1e" }}>{service.statusCode ?? "—"}</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500" style={{ fontSize: 11 }}>
-                        MESSAGE
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#191c1e" }}>{service.message || "—"}</div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

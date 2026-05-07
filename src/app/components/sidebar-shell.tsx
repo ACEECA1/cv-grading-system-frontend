@@ -42,7 +42,7 @@ export function SidebarShell({
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-[260px] bg-[#556880] text-white flex flex-col p-4 sticky top-0 h-screen">
         <div className="pb-8">
-          <div className="bg-white rounded-lg w-20 h-20 flex items-center justify-center mb-3 shadow-sm mx-auto p-2">
+          <div className="w-20 h-20 flex items-center justify-center mb-3 mx-auto">
             <img src={logoUrl} alt="Djezzy" className="w-full h-full object-contain" />
           </div>
           <div className="text-white text-center" style={{ fontSize: 15, fontWeight: 600, lineHeight: "20px" }}>

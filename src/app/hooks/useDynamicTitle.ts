@@ -15,7 +15,9 @@ const routeTitles: Array<{ pattern: string; title: string }> = [
   { pattern: "/admin/approvals", title: "HR Approvals" },
   { pattern: "/admin/health", title: "System Health" },
   { pattern: "/admin/create-job", title: "Create Job" },
-  { pattern: "/admin/submissions", title: "Job Offers" },
+  { pattern: "/admin/jobs", title: "Job Offers" },
+  { pattern: "/admin/jobs/:jobId", title: "Job Offer Detail" },
+  { pattern: "/admin/submissions", title: "Submissions" },
   { pattern: "/admin/submissions/jobs/:jobId", title: "Candidate Pipeline" },
   { pattern: "/admin/submissions/jobs/:jobId/evaluations/:evaluationId", title: "Evaluation Detail" },
 

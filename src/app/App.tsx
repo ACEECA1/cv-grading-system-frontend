@@ -17,7 +17,7 @@ import { AdminDashboard, HRApprovals, SystemHealth } from "./components/admin-vi
 import { CandidateEvaluationDetail } from "./components/CandidateEvaluationDetail";
 import { CandidateJobDetail } from "./components/CandidateJobDetail";
 import { JobBoard, MyApplications } from "./components/candidate-views";
-import { HrJobOfferDetail } from "./components/HrJobOfferDetail";
+import { AdminJobOfferDetail, HrJobOfferDetail } from "./components/HrJobOfferDetail";
 import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
 import { SettingsPage } from "./components/SettingsPage";
 import { useDynamicTitle } from "./hooks/useDynamicTitle";
@@ -69,7 +69,7 @@ const navByRole: Record<Role, { to: string; label: string; icon: React.ReactNode
   admin: [
     { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
     { to: "/admin/approvals", label: "HR Approvals", icon: <UserCheck className="w-[18px] h-[18px]" /> },
-    { to: "/admin/submissions", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/admin/jobs", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
     { to: "/admin/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
     { to: "/admin/health", label: "System Health", icon: <Activity className="w-[18px] h-[18px]" /> },
   ],
@@ -207,7 +207,9 @@ export default function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="approvals" element={<HRApprovals />} />
         <Route path="health" element={<SystemHealth />} />
-        <Route path="create-job" element={<JobOfferCreate backTo="/admin/dashboard" />} />
+        <Route path="create-job" element={<JobOfferCreate backTo="/admin/jobs" />} />
+        <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/admin/jobs/${job.id}`} />} />
+        <Route path="jobs/:jobId" element={<AdminJobOfferDetail />} />
         <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/admin/submissions/jobs/${job.id}`} />} />
         <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="admin" />} />
         <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />

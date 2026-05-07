@@ -16,6 +16,7 @@ import {
 } from "../api";
 
 type TabKey = "job-info" | "applicants";
+type JobOfferManagementRole = "HR" | "ADMIN";
 
 function jobStatusClass(status: string): string {
   if (status === "PUBLISHED") return "bg-green-50 text-green-700 border-green-200";
@@ -66,9 +67,10 @@ function normalizeSkill(value: string): string {
   return value.trim();
 }
 
-export function HrJobOfferDetail() {
+export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   const params = useParams<{ jobId: string }>();
   const navigate = useNavigate();
+  const jobsPath = role === "ADMIN" ? "/admin/jobs" : "/hr/jobs";
 
   const jobId = useMemo(() => {
     const parsed = Number(params.jobId);
@@ -233,7 +235,7 @@ export function HrJobOfferDetail() {
     setFeedback("");
     try {
       await jobOffersApi.deleteJobOffer(jobId);
-      navigate("/hr/jobs");
+      navigate(jobsPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete job.");
     } finally {
@@ -267,7 +269,7 @@ export function HrJobOfferDetail() {
         <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-5">
           <button
             type="button"
-            onClick={() => navigate("/hr/jobs")}
+            onClick={() => navigate(jobsPath)}
             className="text-sm text-gray-600 hover:text-gray-900"
           >
             ← Back to Job Offers
@@ -492,7 +494,14 @@ export function HrJobOfferDetail() {
                               variant="outline"
                               size="sm"
                               disabled={!applicant.evaluationId}
-                              onClick={() => navigate(`/hr/pipeline/evaluation/${applicant.evaluationId}`)}
+                              onClick={() => {
+                                if (!applicant.evaluationId) return;
+                                if (role === "ADMIN") {
+                                  navigate(`/admin/submissions/jobs/${jobId}/evaluations/${applicant.evaluationId}`);
+                                  return;
+                                }
+                                navigate(`/hr/pipeline/evaluation/${applicant.evaluationId}`);
+                              }}
                             >
                               View Evaluation
                             </Button>
@@ -509,4 +518,12 @@ export function HrJobOfferDetail() {
       </div>
     </div>
   );
+}
+
+export function HrJobOfferDetail() {
+  return <JobOfferManagement role="HR" />;
+}
+
+export function AdminJobOfferDetail() {
+  return <JobOfferManagement role="ADMIN" />;
 }

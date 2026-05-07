@@ -106,10 +106,10 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="-m-8 p-8 min-h-[calc(100vh-4rem)] bg-gray-50">
-      <div className="max-w-3xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Account Settings</h1>
+    <div className="-m-4 p-4 min-h-[calc(100vh-4rem)] bg-gray-50 md:-m-8 md:p-8">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-xl font-semibold text-gray-900 md:text-2xl">Account Settings</h1>
           <p className="mt-1 text-sm text-gray-600">Manage your personal information and account security.</p>
         </div>
 
@@ -119,7 +119,7 @@ export function SettingsPage() {
             <span className="text-sm">Loading your profile...</span>
           </div>
         ) : (
-          <form onSubmit={(event) => void handleSave(event)} className="space-y-8">
+          <form onSubmit={(event) => void handleSave(event)} className="space-y-6 md:space-y-8">
             {error && <p className="text-sm text-red-600">{error}</p>}
             {successMessage && (
               <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">

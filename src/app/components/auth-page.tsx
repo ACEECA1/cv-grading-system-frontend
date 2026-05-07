@@ -182,10 +182,10 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px] bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+      <div className="w-full max-w-[420px] bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-8">
         <div className="flex flex-col items-center gap-3 mb-6">
           <img src={logoUrl} alt="Djezzy" className="w-20 h-20 object-contain" />
-          <div style={{ fontSize: 20, fontWeight: 600 }}>Djezzy Talent Portal</div>
+          <div className="text-lg font-semibold md:text-xl">Djezzy Talent Portal</div>
           <div className="text-gray-500 text-center" style={{ fontSize: 13 }}>
             {activeMode === "verify" ? "Verify your email" : activeMode.startsWith("register") ? "Create an account" : "Sign in to continue"}
           </div>
@@ -280,7 +280,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
             )}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>First Name</Label>
                   <Input value={name.first} onChange={(e) => setName({ ...name, first: e.target.value })} disabled={busy} />

@@ -83,13 +83,13 @@ export function JobBoard() {
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>Job Board</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Job Board</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Browse open roles and submit your CV.
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -99,7 +99,7 @@ export function JobBoard() {
             className="pl-9 h-11"
           />
         </div>
-        <div className="relative w-64">
+        <div className="relative w-full md:w-64">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             value={location}
@@ -120,18 +120,18 @@ export function JobBoard() {
       )}
 
       {loading ? (
-        <Card className="p-8 text-center text-gray-500">Loading job offers...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
       ) : visible.length === 0 ? (
-        <Card className="p-8 text-center text-gray-500">No job offers found for this filter.</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found for this filter.</Card>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {visible.map((job) => (
             <Card
               key={job.id}
               onClick={() => navigate(`/candidate/jobs/${job.id}`)}
               className="p-6 flex flex-col gap-4 group hover:border-[#ED1C24]/30 transition-all cursor-pointer"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
                 <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded" style={{ fontSize: 11, fontWeight: 600 }}>
                   {job.status}
                 </span>
@@ -141,7 +141,7 @@ export function JobBoard() {
               </div>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 600 }} className="mb-1">{job.title}</h3>
-                <div className="flex items-center gap-4 text-gray-600" style={{ fontSize: 13 }}>
+                <div className="flex flex-col items-start gap-2 text-gray-600 sm:flex-row sm:items-center sm:gap-4" style={{ fontSize: 13 }}>
                   <span className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5" /> {job.structuredJd?.workLocation || "Not specified"}
                   </span>
@@ -228,7 +228,7 @@ export function MyApplications() {
   return (
     <div className="space-y-6 max-w-[1100px]">
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>My Applications</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">My Applications</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Track your submissions and evaluation results.
         </p>
@@ -241,7 +241,7 @@ export function MyApplications() {
       )}
 
       {loading ? (
-        <Card className="p-8 text-center text-gray-500">Loading submissions...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">Loading submissions...</Card>
       ) : (
         <>
           {processing.length > 0 && (
@@ -250,8 +250,8 @@ export function MyApplications() {
                 Processing
               </h2>
               {processing.map((submission) => (
-                <Card key={submission.cvId} className="p-6">
-                  <div className="flex items-center justify-between">
+                <Card key={submission.cvId} className="p-4 md:p-6">
+                  <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
                     <div>
                       <div style={{ fontSize: 16, fontWeight: 600 }}>{submission.jobOffer.title}</div>
                       <div className="text-gray-500" style={{ fontSize: 12 }}>
@@ -273,7 +273,7 @@ export function MyApplications() {
             </h2>
 
             {completed.length === 0 ? (
-              <Card className="p-8 text-center text-gray-500">No completed evaluations yet.</Card>
+              <Card className="p-4 text-center text-gray-500 md:p-8">No completed evaluations yet.</Card>
             ) : (
               completed.map((submission) => {
                 const evaluation = submission.evaluation;
@@ -283,8 +283,8 @@ export function MyApplications() {
                 const alignmentValue = alignment == null || Number.isNaN(alignment) ? null : Math.max(0, Math.min(alignment, 100));
 
                 return (
-                  <Card key={submission.cvId} className={`p-6 transition-all border-l-4 ${selectedApp === submission.cvId ? "border-l-[#ED1C24] ring-1 ring-gray-200 shadow-sm" : "border-l-transparent"}`}>
-                    <div className="flex gap-6">
+                  <Card key={submission.cvId} className={`p-4 transition-all border-l-4 md:p-6 ${selectedApp === submission.cvId ? "border-l-[#ED1C24] ring-1 ring-gray-200 shadow-sm" : "border-l-transparent"}`}>
+                    <div className="flex flex-col gap-4 md:flex-row md:gap-6">
                       {scoreValue == null ? (
                         <div className="w-[88px] h-[88px] rounded-full bg-gray-100 text-gray-500 flex items-center justify-center" style={{ fontSize: 12, fontWeight: 700 }}>
                           N/A
@@ -293,14 +293,14 @@ export function MyApplications() {
                         <MatchRing score={scoreValue} size={88} />
                       )}
                       <div className="flex-1 space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
                           <div>
                             <div style={{ fontSize: 18, fontWeight: 600 }}>{submission.jobOffer.title}</div>
                             <div className="text-gray-500" style={{ fontSize: 12 }}>
                               Submitted {formatDate(submission.uploadDate)} · Score {formatScoreOutOfTen(score)}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                             <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-md" style={{ fontSize: 12, fontWeight: 600 }}>
                               {evaluation?.status || "SCORED"}
                             </span>
@@ -336,7 +336,7 @@ export function MyApplications() {
                               </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                               <div>
                                 <div className="text-gray-700 mb-2 flex items-center gap-1.5" style={{ fontSize: 12, fontWeight: 700 }}>
                                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> MATCHED SKILLS

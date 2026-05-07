@@ -72,10 +72,10 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
   const steps = ["Uploading Document", "Extracting text", "Evaluating skills"];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 md:items-center md:p-4">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div
-        className="relative w-full max-w-[560px] bg-white rounded-lg border border-gray-200 shadow-xl p-6 animate-in fade-in zoom-in-95 duration-200"
+        className="relative h-full w-full bg-white border border-gray-200 p-4 shadow-xl animate-in fade-in zoom-in-95 duration-200 md:h-auto md:max-w-[560px] md:rounded-lg md:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <button type="button" onClick={onClose} className="absolute right-3 top-3 text-gray-500 hover:text-gray-800">
@@ -102,7 +102,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
                   setApplicationError("");
                 }
               }}
-              className={`rounded-lg border-2 border-dashed p-10 text-center transition-colors ${
+              className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors md:p-10 ${
                 dragActive ? "border-[#ED1C24] bg-red-50" : "border-gray-300 bg-gray-50"
               }`}
             >
@@ -138,7 +138,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
               </div>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
@@ -157,7 +157,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
                 const isDone = index < activeStep;
                 const isActive = index === activeStep;
                 return (
-                  <div key={step} className="flex items-center gap-3">
+                  <div key={step} className="flex items-start gap-3">
                     <div
                       className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs font-semibold ${
                         isDone
@@ -190,7 +190,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
             <div className="flex justify-center">
               <Button
                 onClick={() => navigate("/candidate/applications")}
-                className="bg-[#ED1C24] hover:bg-[#c81820] text-white"
+                className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white md:w-auto"
               >
                 Go to My Applications
               </Button>

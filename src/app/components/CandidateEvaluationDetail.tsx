@@ -200,7 +200,7 @@ function QuestionAccordion({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left transition-colors hover:bg-gray-50"
+        className="w-full px-4 py-3 flex flex-col items-start gap-2 text-left transition-colors hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium text-gray-900 truncate">{question || "-"}</span>
@@ -331,13 +331,13 @@ export function CandidateEvaluationDetail({
           </div>
         ) : (
           <>
-            <section className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+            <section className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <ScoreRing score={score} />
                   <div className="space-y-2 text-center sm:text-left">
                     <div className="flex items-center justify-center sm:justify-start gap-3">
-                      <h1 className="text-2xl font-bold text-gray-900">{candidateName}</h1>
+                      <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{candidateName}</h1>
                       <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${statusClass(status)}`}>{status}</span>
                     </div>
                     <p className="text-gray-600 text-sm flex items-center justify-center sm:justify-start gap-1.5">
@@ -348,7 +348,7 @@ export function CandidateEvaluationDetail({
                 <Button
                   onClick={() => void downloadCv()}
                   disabled={downloading || !resolvedEvaluationId}
-                  className="bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2"
+                  className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2 md:w-auto"
                 >
                   {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   Download CV
@@ -389,9 +389,9 @@ export function CandidateEvaluationDetail({
 
               {activeTab === "overview" && (
                 <div className="p-4 sm:p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-1">
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
                         <h3 className="text-base font-semibold text-gray-900 mb-4">Matched Skills</h3>
                         {evaluation?.matchedSkills && evaluation.matchedSkills.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
@@ -406,7 +406,7 @@ export function CandidateEvaluationDetail({
                         )}
                       </div>
 
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
                         <h3 className="text-base font-semibold text-gray-900 mb-4">Missing Skills</h3>
                         {evaluation?.missingSkills && evaluation.missingSkills.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
@@ -427,23 +427,23 @@ export function CandidateEvaluationDetail({
                     </div>
 
                     <div className="space-y-6 lg:col-span-2">
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
                         <h3 className="text-base font-semibold text-gray-900 mb-3">AI Summary</h3>
                         <p className="text-sm text-gray-700 italic whitespace-pre-wrap">{summaryText}</p>
                       </div>
 
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
                         <h3 className="text-base font-semibold text-gray-900 mb-4">Evaluation Metadata</h3>
                         <div className="space-y-3 text-sm">
-                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                          <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
                             <span className="text-gray-500">Upload Date</span>
                             <span className="font-medium text-gray-900">{resolvedUploadDate ? formatDate(resolvedUploadDate) : "-"}</span>
                           </div>
-                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                          <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
                             <span className="text-gray-500">CV ID</span>
                             <span className="font-medium text-gray-900">{resolvedCvId}</span>
                           </div>
-                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                          <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
                             <span className="text-gray-500">Evaluation ID</span>
                             <span className="font-medium text-gray-900">{resolvedEvaluationId ?? "-"}</span>
                           </div>
@@ -452,7 +452,7 @@ export function CandidateEvaluationDetail({
                     </div>
 
                     <div className="lg:col-span-3">
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5">
+                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
                         <h3 className="text-base font-semibold text-gray-900 mb-4">Experience Alignment</h3>
                         {alignmentRows.length > 0 ? (
                           <div className="space-y-4">
@@ -464,7 +464,7 @@ export function CandidateEvaluationDetail({
 
                               return (
                                 <div key={`${label}-${index}`} className="space-y-2">
-                                  <div className="flex items-center justify-between text-sm">
+                                  <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
                                     <span className="font-medium text-gray-800">{label}</span>
                                     <span className="text-gray-600">{matchPercentage == null ? "-" : `${Math.round(matchPercentage)}%`}</span>
                                   </div>
@@ -492,7 +492,7 @@ export function CandidateEvaluationDetail({
 
               {activeTab === "interview-guides" && (
                 <div className="p-4 sm:p-6 space-y-6">
-                  <div className="rounded-lg border border-gray-200 bg-white p-5">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-5">
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Technical Assessment</h3>
                     {technicalQuestions.length > 0 ? (
                       <div>
@@ -538,7 +538,7 @@ export function CandidateEvaluationDetail({
                     )}
                   </div>
 
-                  <div className="rounded-lg border border-gray-200 bg-white p-5">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-5">
                     <h3 className="text-base font-semibold text-gray-900 mb-4">HR &amp; Behavioral Assessment</h3>
                     {hrQuestions.length > 0 ? (
                       <div>
@@ -613,12 +613,12 @@ export function CandidateEvaluationDetail({
               {activeTab === "parsed-profile" && (
                 <div className="p-4 sm:p-6">
                   {!profileData ? (
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                       <p className="text-sm text-gray-600">Parsed profile data is currently unavailable for this candidate.</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                         <h3 className="text-base font-semibold text-gray-900 mb-4">Contact &amp; Info</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-start gap-2 text-sm">
@@ -664,7 +664,7 @@ export function CandidateEvaluationDetail({
                       </div>
 
                       {(profileData?.experience?.length ?? 0) > 0 && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                           <h3 className="text-base font-semibold text-gray-900 mb-4">Work Experience</h3>
                           <div className="space-y-4">
                             {profileData?.experience?.map((item, index) => (
@@ -679,7 +679,7 @@ export function CandidateEvaluationDetail({
                       )}
 
                       {(profileData?.education?.length ?? 0) > 0 && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                           <h3 className="text-base font-semibold text-gray-900 mb-4">Education</h3>
                           <div className="space-y-3">
                             {profileData?.education?.map((item, index) => (
@@ -693,7 +693,7 @@ export function CandidateEvaluationDetail({
                       )}
 
                       {((profileData?.skills?.length ?? 0) > 0 || (profileData?.languages?.length ?? 0) > 0) && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                           <h3 className="text-base font-semibold text-gray-900 mb-4">Skills &amp; Languages</h3>
                           {(profileData?.skills?.length ?? 0) > 0 && (
                             <div className="mb-4">

@@ -18,14 +18,14 @@ function statusClass(status: string): string {
 
 function MetricCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-3">
+    <Card className="p-4 md:p-6">
+      <div className="mb-3 flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
         <span className="text-gray-600" style={{ fontSize: 13 }}>
           {label}
         </span>
         <div className="w-9 h-9 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center">{icon}</div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
+      <div className="text-2xl font-bold md:text-3xl">{value}</div>
     </Card>
   );
 }
@@ -106,9 +106,9 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
 
   return (
     <div className="space-y-6 max-w-[1200px]">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700 }}>HR Dashboard</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">HR Dashboard</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
             Live recruitment stats from backend data.
           </p>
@@ -124,7 +124,7 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <MetricCard label="CVs Processed" value={String(totalCvsProcessed)} icon={<FileText className="w-4 h-4" />} />
         <MetricCard label="Average Match Score" value={formatScoreOutOfTen(averageScore)} icon={<TrendingUp className="w-4 h-4" />} />
       </div>
@@ -201,9 +201,9 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
 
   return (
     <div className="max-w-[900px] space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700 }}>Create Job Offer</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Create Job Offer</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
             Submit a title and raw description. Backend will process and publish when parsing succeeds.
           </p>
@@ -212,7 +212,7 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
           Cancel
         </Button>
       </div>
-      <Card className="p-8 space-y-5">
+      <Card className="space-y-5 p-4 md:p-8">
         <div className="space-y-1.5">
           <Label>Job Title</Label>
           <Input placeholder="e.g. Senior Java Developer" value={title} onChange={(e) => setTitle(e.target.value)} disabled={loading} />
@@ -229,7 +229,7 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
         </div>
         {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>}
         {success && <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">{success}</div>}
-        <div className="flex justify-end">
+        <div className="flex justify-stretch md:justify-end">
           <Button onClick={() => void publish()} disabled={loading} className="bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {loading ? "Submitting..." : "Create Job Offer"}
@@ -272,7 +272,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>Available Job Offers</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Available Job Offers</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Select a job offer to inspect submitted evaluations.
         </p>
@@ -285,18 +285,18 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
       )}
 
       {loading ? (
-        <Card className="p-8 text-center text-gray-500">Loading job offers...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
       ) : offers?.content.length ? (
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {offers.content.map((item) => {
             const job = mapJobOffer(item);
             return (
               <Card
                 key={job.id}
                 onClick={() => navigate(onSelectJobPath(job))}
-                className="p-6 cursor-pointer hover:border-[#ED1C24] hover:shadow-md transition-all"
+                className="cursor-pointer p-4 transition-all hover:border-[#ED1C24] hover:shadow-md md:p-6"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
                   <div className="w-11 h-11 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center">
                     <Briefcase className="w-5 h-5" />
                   </div>
@@ -308,7 +308,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
                 <div className="text-gray-500 mb-4" style={{ fontSize: 12 }}>
                   {job.location} · Created {formatDate(job.createdAt)}
                 </div>
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex flex-col items-start justify-between gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
                   <div className="flex items-center gap-2 text-gray-700" style={{ fontSize: 13 }}>
                     <Users className="w-4 h-4 text-gray-500" />
                     Click to see evaluations
@@ -319,10 +319,10 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
           })}
         </div>
       ) : (
-        <Card className="p-8 text-center text-gray-500">No job offers found.</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found.</Card>
       )}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button variant="outline" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
           Previous
         </Button>
@@ -388,13 +388,13 @@ export function CandidatePipeline({
         </button>
       )}
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>{title}</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{title}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Backend evaluations list. Scores are displayed as /10.
         </p>
       </div>
 
-      <div className="max-w-[220px]">
+      <div className="w-full md:max-w-[220px]">
         <Label>Minimum score (/10)</Label>
         <Input value={minScore} onChange={(e) => setMinScore(e.target.value)} placeholder="e.g. 7.5" />
       </div>
@@ -452,7 +452,7 @@ export function CandidatePipeline({
         )}
       </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button variant="outline" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
           Previous
         </Button>

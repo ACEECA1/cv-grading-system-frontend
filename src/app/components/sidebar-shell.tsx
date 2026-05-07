@@ -1,5 +1,5 @@
-import { LogOut, Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import { LogOut, Menu, Settings, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 const logoUrl = new URL("../../imports/image.png", import.meta.url).href;
 
@@ -38,9 +38,46 @@ export function SidebarShell({
   onLogout,
   children,
 }: SidebarShellProps) {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-[260px] bg-[#556880] text-white flex flex-col p-4 sticky top-0 h-screen">
+    <div className="min-h-screen bg-gray-50 md:flex">
+      <button
+        type="button"
+        onClick={() => setIsMobileOpen(true)}
+        className={`fixed top-1/2 left-0 z-50 -translate-y-1/2 bg-[#556880] text-white p-2 rounded-r-md shadow-md md:hidden ${
+          isMobileOpen ? "hidden" : ""
+        }`}
+        aria-label="Open sidebar"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {isMobileOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+          aria-label="Close sidebar overlay"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#556880] text-white flex flex-col p-4 transition-transform duration-150 ease-in-out ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen`}
+      >
+        <div className="flex justify-end md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(false)}
+            className="rounded-md p-2 text-[#bcc7de] hover:bg-white/5"
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
         <div className="pb-8">
           <div className="w-20 h-20 flex items-center justify-center mb-3 mx-auto">
             <img src={logoUrl} alt="Djezzy" className="w-full h-full object-contain" />
@@ -59,6 +96,7 @@ export function SidebarShell({
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={() => setIsMobileOpen(false)}
                 className={({ isActive }) => `flex items-center gap-4 px-4 py-2 rounded-lg text-left transition-colors ${
                   isActive ? "bg-[#ED1C24] text-white" : "text-[#bcc7de] hover:bg-white/5"
                 }`}
@@ -70,9 +108,36 @@ export function SidebarShell({
           })}
         </nav>
 
-        <div className="border-t border-white/10 pt-4">
+        <div className="border-t border-white/10 pt-4 space-y-3">
+          <div className="px-4">
+            <span
+              className={`inline-block px-2.5 py-1 rounded-md ${roleBadgeColor[role]}`}
+              style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.5px" }}
+            >
+              {role.toUpperCase()}
+            </span>
+            <p className="mt-2 text-[#bcc7de]" style={{ fontSize: 13 }}>
+              {fullName}
+            </p>
+          </div>
+          <NavLink
+            to="/settings"
+            onClick={() => setIsMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                isActive ? "bg-white/10 text-white" : "text-[#bcc7de] hover:bg-white/5"
+              }`
+            }
+            aria-label="Settings"
+          >
+            <Settings className="w-[18px] h-[18px]" />
+            <span style={{ fontSize: 14 }}>Settings</span>
+          </NavLink>
           <button
-            onClick={onLogout}
+            onClick={() => {
+              setIsMobileOpen(false);
+              onLogout();
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg w-full text-[#bcc7de] hover:bg-white/5"
           >
             <LogOut className="w-[18px] h-[18px]" />
@@ -81,33 +146,8 @@ export function SidebarShell({
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <span
-              className={`px-2.5 py-1 rounded-md ${roleBadgeColor[role]}`}
-              style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.5px" }}
-            >
-              {role.toUpperCase()}
-            </span>
-            <span className="text-gray-600" style={{ fontSize: 14 }}>
-              {fullName}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `p-2 rounded-full transition-colors ${isActive ? "text-[#ED1C24] bg-red-50" : "hover:bg-gray-100 text-gray-600"}`
-              }
-              aria-label="Settings"
-            >
-              <Settings className="w-[18px] h-[18px]" />
-            </NavLink>
-          </div>
-        </header>
-
-        <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <div className="flex-1 min-w-0 min-h-screen">
+        <main className="h-full overflow-auto p-4 md:p-8">{children}</main>
       </div>
     </div>
   );

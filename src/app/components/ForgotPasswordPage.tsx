@@ -75,10 +75,10 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 border border-gray-200">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-4 border border-gray-200 md:p-8">
         {step === "request" ? (
           <>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Reset your password</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">Reset your password</h1>
             <p className="text-sm text-gray-600 mb-6">
               Enter your email address and we will send you a verification code.
             </p>
@@ -120,7 +120,7 @@ export function ForgotPasswordPage() {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">Create new password</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">Create new password</h1>
             <p className="text-sm text-gray-600 mb-6">
               Enter the verification code sent to your email and your new password.
             </p>

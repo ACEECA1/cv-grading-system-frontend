@@ -245,8 +245,8 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-full p-6">
-        <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-12 flex items-center justify-center">
+      <div className="bg-gray-50 min-h-full p-4 md:p-6">
+        <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex items-center justify-center md:p-12">
           <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
         </div>
       </div>
@@ -255,7 +255,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
   if (!job) {
     return (
-      <div className="bg-gray-50 min-h-full p-6">
+      <div className="bg-gray-50 min-h-full p-4 md:p-6">
         <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-6 text-red-700">
           {error || "Job offer not found."}
         </div>
@@ -264,9 +264,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   }
 
   return (
-    <div className="bg-gray-50 min-h-full p-6">
+    <div className="bg-gray-50 min-h-full p-4 md:p-6">
       <div className="max-w-[1200px] mx-auto space-y-6">
-        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-5">
+        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 space-y-5 md:p-6">
           <button
             type="button"
             onClick={() => navigate(jobsPath)}
@@ -277,7 +277,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2">
-              <h1 style={{ fontSize: 28, fontWeight: 700 }}>{job.title}</h1>
+              <h1 className="text-2xl font-bold md:text-3xl">{job.title}</h1>
               <span
                 className={`inline-flex items-center px-2.5 py-1 rounded-md border ${jobStatusClass(job.status)}`}
                 style={{ fontSize: 12, fontWeight: 600 }}
@@ -286,7 +286,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
               <Button variant="outline" onClick={() => void toggleStatus()} disabled={toggling || deleting}>
                 {toggling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Toggle Status"}
               </Button>
@@ -334,7 +334,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
           </div>
 
           {activeTab === "job-info" ? (
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <Label>Job Title</Label>
@@ -361,7 +361,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
                 <div className="space-y-1.5">
                   <Label>Experience Range</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <Input
                       value={minExperience}
                       onChange={(e) => setMinExperience(e.target.value)}
@@ -446,7 +446,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-stretch md:justify-end">
                 <Button
                   onClick={() => void saveChanges()}
                   disabled={saving || toggling || deleting}
@@ -457,8 +457,8 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
               </div>
             </div>
           ) : (
-            <div className="p-6">
-              <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <div className="p-4 md:p-6">
+              <div className="w-full overflow-x-auto rounded-lg border border-gray-200">
                 <Table>
                   <TableHeader>
                     <TableRow>

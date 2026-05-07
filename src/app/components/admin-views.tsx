@@ -16,8 +16,8 @@ function MetricCard({
   highlight?: boolean;
 }) {
   return (
-    <Card className={`p-6 ${highlight ? "border-[#ED1C24] border-2" : ""}`}>
-      <div className="flex items-center justify-between mb-3">
+    <Card className={`p-4 md:p-6 ${highlight ? "border-[#ED1C24] border-2" : ""}`}>
+      <div className="mb-3 flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
         <span className="text-gray-600" style={{ fontSize: 13 }}>
           {label}
         </span>
@@ -25,7 +25,7 @@ function MetricCard({
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: highlight ? "#ED1C24" : "#191c1e" }}>{value}</div>
+      <div className="text-2xl font-bold md:text-3xl" style={{ color: highlight ? "#ED1C24" : "#191c1e" }}>{value}</div>
     </Card>
   );
 }
@@ -63,7 +63,7 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Admin Dashboard</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Overview based on live backend data.
         </p>
@@ -73,7 +73,7 @@ export function AdminDashboard() {
           {error}
         </Card>
       )}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Total CVs Processed" value={String(totalCvsProcessed)} icon={<Users className="w-4 h-4" />} />
         <MetricCard label="Average Match Score" value={formatScoreOutOfTen(averageScore)} icon={<Activity className="w-4 h-4" />} />
         <MetricCard label="Pending HR Approvals" value={String(pending.length)} icon={<UserCheck className="w-4 h-4" />} highlight />
@@ -89,7 +89,7 @@ export function AdminDashboard() {
         ) : (
           <div className="space-y-3">
             {pending.slice(0, 5).map((user) => (
-              <div key={user.id} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0">
+              <div key={user.id} className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-3 last:border-0 md:flex-row md:items-center">
                 <div style={{ fontSize: 14 }}>
                   <span style={{ fontWeight: 600 }}>{user.firstName} {user.lastName}</span>{" "}
                   <span className="text-gray-600">({user.email})</span>
@@ -256,9 +256,9 @@ export function SystemHealth() {
 
   return (
     <div className="max-w-[1200px] space-y-6 bg-gray-50">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700 }}>System Health</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">System Health</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
             Real-time status of critical platform services.
           </p>
@@ -283,19 +283,19 @@ export function SystemHealth() {
         {cards.map((service) => {
           const level = resolveHealthLevel(service.reachable, service.latencyMs);
           return (
-            <div key={service.name} className="rounded-lg border border-gray-200 bg-white p-6">
-              <div className="mb-5 flex items-start justify-between gap-3">
+            <div key={service.name} className="rounded-lg border border-gray-200 bg-white p-4 md:p-6">
+              <div className="mb-5 flex flex-col items-start gap-3 md:flex-row md:items-start md:justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
                 <StatusBadge checking={checking} level={level} />
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
                   <span className="text-gray-500">Latency</span>
                   <span className="font-semibold text-gray-900">
                     {checking ? "Checking..." : service.latencyMs != null ? `${service.latencyMs}ms` : "—"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
                   <span className="text-gray-500">Last Checked</span>
                   <span className="font-semibold text-gray-900">{formatRelativeTime(service.lastChecked)}</span>
                 </div>
@@ -347,7 +347,7 @@ export function HRApprovals() {
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>HR Approvals</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">HR Approvals</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
           Review and approve pending HR registrations.
         </p>
@@ -360,21 +360,21 @@ export function HRApprovals() {
       )}
 
       <div className="grid grid-cols-1 gap-6">
-        <Card className="p-6 border-[#ED1C24] border-2">
-          <div className="flex items-center justify-between mb-3">
+        <Card className="p-4 border-[#ED1C24] border-2 md:p-6">
+          <div className="mb-3 flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
             <span className="text-gray-600" style={{ fontSize: 13 }}>Pending Approvals</span>
             <div className="w-9 h-9 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center">
               <UserCheck className="w-4 h-4" />
             </div>
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#ED1C24" }}>{pending.length}</div>
+          <div className="text-2xl font-bold text-[#ED1C24] md:text-3xl">{pending.length}</div>
         </Card>
       </div>
 
       {loading ? (
         <Card className="p-6 text-gray-500">Loading pending approvals...</Card>
       ) : pending.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="p-6 text-center md:p-12">
           <div className="w-14 h-14 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-7 h-7" />
           </div>
@@ -388,18 +388,18 @@ export function HRApprovals() {
           {pending.map((user) => {
             const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
             return (
-              <Card key={user.id} className="p-6 flex items-center gap-6">
+              <Card key={user.id} className="p-4 flex flex-col items-start gap-4 md:p-6 md:flex-row md:items-center md:gap-6">
                 <div className="w-14 h-14 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center shrink-0" style={{ fontSize: 16, fontWeight: 700 }}>
                   {initials || "HR"}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
+                  <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <h3 style={{ fontSize: 16, fontWeight: 600 }}>{user.firstName} {user.lastName}</h3>
                     <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700" style={{ fontSize: 11, fontWeight: 600 }}>
                       {user.hrApprovalStatus}
                     </span>
                   </div>
-                  <div className="flex items-center gap-5 text-gray-600" style={{ fontSize: 13 }}>
+                  <div className="flex flex-col items-start gap-2 text-gray-600 sm:flex-row sm:items-center sm:gap-5" style={{ fontSize: 13 }}>
                     <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {user.email}</span>
                     <span>Registered {formatDate(user.createdAt)}</span>
                   </div>

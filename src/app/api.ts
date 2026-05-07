@@ -342,7 +342,60 @@ async function requestJson<T>(
   }
   headers.set("Accept", "application/json");
 
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  let response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (
+    (response.status === 401 || response.status === 403)
+    && path !== "/api/auth/refresh"
+    && path !== "/api/auth/login"
+  ) {
+    const stored = loadStoredAuth();
+    if (stored?.refreshToken) {
+      const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ refreshToken: stored.refreshToken }),
+      });
+
+      let refreshSucceeded = false;
+      if (refreshResponse.ok) {
+        const refreshText = await refreshResponse.text();
+        let refreshPayload: unknown = null;
+        if (refreshText) {
+          try {
+            refreshPayload = JSON.parse(refreshText) as unknown;
+          } catch {
+            refreshPayload = null;
+          }
+        }
+        if (refreshPayload && typeof refreshPayload === "object" && "success" in refreshPayload && "data" in refreshPayload) {
+          const envelope = refreshPayload as ApiResponseEnvelope<AuthTokensDTO>;
+          if (envelope.success && envelope.data) {
+            saveStoredAuth(envelope.data);
+            headers.set("Authorization", `Bearer ${envelope.data.accessToken}`);
+            refreshSucceeded = true;
+          }
+        }
+      }
+
+      if (refreshSucceeded) {
+        response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+      } else {
+        clearStoredAuth();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      }
+    } else {
+      clearStoredAuth();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+  }
+
   const text = await response.text();
   let payload: unknown = null;
   if (text) {

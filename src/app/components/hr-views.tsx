@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { ArrowLeft, Briefcase, FileText, Loader2, MapPin, Search, Sparkles, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, ChevronLeft, ChevronRight, FileText, Loader2, MapPin, Search, Sparkles, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { formatDate, formatScoreOutOfTen, hrApi, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
 
@@ -244,7 +244,7 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
 export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobOffer) => string }) {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
-  const [size] = useState(10);
+  const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [jobOffers, setJobOffers] = useState<JobOfferDTO[]>([]);
@@ -304,6 +304,23 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
 
   const safeTotalPages = Math.max(1, totalPages);
   const rows = useMemo(() => jobOffers.map(mapJobOffer), [jobOffers]);
+  const visiblePages = useMemo<(number | "...")[]>(() => {
+    if (safeTotalPages <= 7) {
+      return Array.from({ length: safeTotalPages }, (_, index) => index);
+    }
+
+    const lastPage = safeTotalPages - 1;
+
+    if (page <= 2) {
+      return [0, 1, 2, "...", lastPage];
+    }
+
+    if (page >= lastPage - 2) {
+      return [0, "...", lastPage - 2, lastPage - 1, lastPage];
+    }
+
+    return [0, "...", page - 1, page, page + 1, "...", lastPage];
+  }, [page, safeTotalPages]);
 
   return (
     <div className="space-y-6 max-w-[1200px]">
@@ -445,20 +462,65 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found.</Card>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-gray-600" style={{ fontSize: 13 }}>
-          {`Page ${page + 1} of ${safeTotalPages} · ${totalElements} total`}
+      <div className="flex items-center justify-between w-full pt-4 border-t border-gray-200">
+        <div className="flex items-center gap-2 text-gray-700" style={{ fontSize: 13 }}>
+          <span>Rows per page:</span>
+          <select
+            value={size}
+            onChange={(e) => {
+              setSize(Number(e.target.value));
+              setPage(0);
+            }}
+            className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+          <span className="text-gray-500">{`${totalElements} total`}</span>
         </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" disabled={page === 0} onClick={() => setPage((v) => Math.max(0, v - 1))}>
-            Previous
-          </Button>
+
+        <div className="flex items-center gap-1">
           <Button
             variant="outline"
+            size="icon"
+            disabled={page === 0}
+            onClick={() => setPage((v) => Math.max(0, v - 1))}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {visiblePages.map((pageItem, index) => (
+            pageItem === "..."
+              ? (
+                <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
+                  ...
+                </span>
+              )
+              : (
+                <button
+                  key={pageItem}
+                  onClick={() => setPage(pageItem)}
+                  className={`h-9 min-w-9 rounded-md border px-3 text-sm font-medium transition ${
+                    pageItem === page
+                      ? "bg-[#ED1C24] text-white border-[#ED1C24]"
+                      : "text-gray-700 hover:bg-gray-50 border-gray-300"
+                  }`}
+                >
+                  {pageItem + 1}
+                </button>
+              )
+          ))}
+
+          <Button
+            variant="outline"
+            size="icon"
             disabled={page >= safeTotalPages - 1}
             onClick={() => setPage((v) => Math.min(safeTotalPages - 1, v + 1))}
+            aria-label="Next page"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

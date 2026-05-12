@@ -15,6 +15,18 @@ export interface PageResponse<T> {
   last: boolean;
 }
 
+export interface NestedPageMeta {
+  totalPages: number;
+  totalElements: number;
+  number?: number;
+  size?: number;
+}
+
+export interface NestedPageResponse<T> {
+  content: T[];
+  page?: NestedPageMeta;
+}
+
 export interface UserDTO {
   id: number;
   username: string;
@@ -557,15 +569,21 @@ export const hrApi = {
   listJobOffers: (params: {
     page: number;
     size: number;
+    title?: string;
     location?: string;
-    status?: "DRAFT" | "PUBLISHED" | "CLOSED" | "FAILED";
+    isPublished?: boolean;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
   }) =>
-    requestJson<PageResponse<JobOfferDTO>>(
+    requestJson<NestedPageResponse<JobOfferDTO>>(
       `/api/hr/job-offers${buildQuery({
         page: params.page,
         size: params.size,
+        title: params.title,
         location: params.location,
-        status: params.status,
+        isPublished: params.isPublished,
+        sortBy: params.sortBy,
+        sortDir: params.sortDir,
       })}`,
     ),
   createJobOffer: (payload: { title: string; rawText: string }) =>

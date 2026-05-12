@@ -6,7 +6,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { ArrowLeft, Briefcase, FileText, Loader2, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { ArrowLeft, Briefcase, FileText, Loader2, MapPin, Search, Sparkles, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { formatDate, formatScoreOutOfTen, hrApi, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
 
@@ -242,10 +243,31 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
 
 export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobOffer) => string }) {
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
+  const [size] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [offers, setOffers] = useState<PageResponse<JobOfferDTO> | null>(null);
+  const [jobOffers, setJobOffers] = useState<JobOfferDTO[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const [titleInput, setTitleInput] = useState("");
+  const [locationInput, setLocationInput] = useState("");
+  const [statusInput, setStatusInput] = useState<"all" | "published" | "draft">("all");
+
+  const [appliedTitle, setAppliedTitle] = useState("");
+  const [appliedLocation, setAppliedLocation] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState<"all" | "published" | "draft">("all");
+
+  const [sortBy, setSortBy] = useState<"createdAt" | "title">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const applyFilters = () => {
+    setAppliedTitle(titleInput.trim());
+    setAppliedLocation(locationInput.trim());
+    setAppliedStatus(statusInput);
+    setPage(0);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -253,8 +275,21 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
       setLoading(true);
       setError("");
       try {
-        const data = await hrApi.listJobOffers({ page: page - 1, size: 8 });
-        if (!cancelled) setOffers(data);
+        const isPublished = appliedStatus === "all" ? undefined : appliedStatus === "published";
+        const data = await hrApi.listJobOffers({
+          page,
+          size,
+          title: appliedTitle || undefined,
+          location: appliedLocation || undefined,
+          isPublished,
+          sortBy,
+          sortDir,
+        });
+        if (!cancelled) {
+          setJobOffers(data?.content || []);
+          setTotalPages(data?.page?.totalPages ?? 1);
+          setTotalElements(data?.page?.totalElements ?? 0);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load job offers.");
       } finally {
@@ -265,9 +300,10 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [appliedLocation, appliedStatus, appliedTitle, page, size, sortBy, sortDir]);
 
-  const totalPages = Math.max(1, offers?.totalPages ?? 1);
+  const safeTotalPages = Math.max(1, totalPages);
+  const rows = useMemo(() => jobOffers.map(mapJobOffer), [jobOffers]);
 
   return (
     <div className="space-y-6 max-w-[1200px]">
@@ -284,12 +320,99 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         </Card>
       )}
 
+      <Card className="p-4 md:p-6 space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="search-title">Search Title</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="search-title"
+                className="pl-9"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") applyFilters();
+                }}
+                placeholder="e.g. Backend Engineer"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="search-location">Search Location</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="search-location"
+                className="pl-9"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") applyFilters();
+                }}
+                placeholder="e.g. Paris, Remote"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select value={statusInput} onValueChange={(value) => setStatusInput(value as "all" | "published" | "draft")}>
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Sort By</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={sortBy} onValueChange={(value) => {
+                setSortBy(value as "createdAt" | "title");
+                setPage(0);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Date Created" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt">Date Created</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortDir} onValueChange={(value) => {
+                setSortDir(value as "asc" | "desc");
+                setPage(0);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Desc" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Desc</SelectItem>
+                  <SelectItem value="asc">Asc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={applyFilters} disabled={loading}>
+            Apply Filters
+          </Button>
+        </div>
+      </Card>
+
       {loading ? (
         <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
-      ) : offers?.content.length ? (
+      ) : rows.length ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {offers.content.map((item) => {
-            const job = mapJobOffer(item);
+          {rows.map((job) => {
             return (
               <Card
                 key={job.id}
@@ -322,13 +445,22 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found.</Card>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
-          Previous
-        </Button>
-        <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>
-          Next
-        </Button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-gray-600" style={{ fontSize: 13 }}>
+          {`Page ${page + 1} of ${safeTotalPages} · ${totalElements} total`}
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" disabled={page === 0} onClick={() => setPage((v) => Math.max(0, v - 1))}>
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            disabled={page >= safeTotalPages - 1}
+            onClick={() => setPage((v) => Math.min(safeTotalPages - 1, v + 1))}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );

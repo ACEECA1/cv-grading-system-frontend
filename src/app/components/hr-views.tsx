@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -7,9 +17,10 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { ArrowLeft, Briefcase, ChevronLeft, ChevronRight, FileText, Loader2, MapPin, Search, Sparkles, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, ChevronLeft, ChevronRight, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
-import { formatDate, formatScoreOutOfTen, hrApi, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
+import { formatDate, formatScoreOutOfTen, hrApi, loadStoredAuth, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
+import { toast } from "sonner";
 
 function statusClass(status: string): string {
   if (status === "SCORED" || status === "PUBLISHED") return "bg-green-50 text-green-700";
@@ -250,6 +261,8 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
   const [jobOffers, setJobOffers] = useState<JobOfferDTO[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [jobToDelete, setJobToDelete] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [titleInput, setTitleInput] = useState("");
   const [locationInput, setLocationInput] = useState("");
@@ -261,6 +274,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
 
   const [sortBy, setSortBy] = useState<"createdAt" | "title">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const canDelete = loadStoredAuth()?.user.role === "ADMIN";
 
   const applyFilters = () => {
     setAppliedTitle(titleInput.trim());
@@ -321,6 +335,23 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
 
     return [0, "...", page - 1, page, page + 1, "...", lastPage];
   }, [page, safeTotalPages]);
+
+  const handleDeleteConfirm = async () => {
+    if (jobToDelete == null) return;
+
+    try {
+      setDeleting(true);
+      await hrApi.deleteJobOffer(jobToDelete);
+      toast.success("Job offer deleted successfully");
+      setJobOffers((prev) => prev.filter((job) => job.id !== jobToDelete));
+      setTotalElements((prev) => Math.max(0, prev - 1));
+      setJobToDelete(null);
+    } catch {
+      toast.error("Failed to delete job offer");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-[1200px]">
@@ -453,6 +484,19 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
                     <Users className="w-4 h-4 text-gray-500" />
                     Click to see evaluations
                   </div>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setJobToDelete(job.id);
+                      }}
+                      className="text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors"
+                      aria-label="Delete job offer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </Card>
             );
@@ -524,6 +568,37 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={jobToDelete !== null} onOpenChange={(open) => {
+        if (!open && !deleting) setJobToDelete(null);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job Offer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete this job offer? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setJobToDelete(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeleteConfirm();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Confirm Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

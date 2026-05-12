@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loadStoredAuth, saveStoredAuth, type UpdateUserDTO, userApi } from "../api";
 
 const inputClassName =
@@ -17,6 +17,9 @@ export function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -177,40 +180,73 @@ export function SettingsPage() {
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-current-password">
                     Current Password
                   </label>
-                  <input
-                    id="settings-current-password"
-                    type="password"
-                    className={inputClassName}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    disabled={saving}
-                  />
+                  <div className="relative w-full">
+                    <input
+                      id="settings-current-password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      className={`${inputClassName} pr-10`}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      disabled={saving}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                      aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                      disabled={saving}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-new-password">
                     New Password
                   </label>
-                  <input
-                    id="settings-new-password"
-                    type="password"
-                    className={inputClassName}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={saving}
-                  />
+                  <div className="relative w-full">
+                    <input
+                      id="settings-new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      className={`${inputClassName} pr-10`}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={saving}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                      aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                      disabled={saving}
+                    >
+                      {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-confirm-new-password">
                     Confirm New Password
                   </label>
-                  <input
-                    id="settings-confirm-new-password"
-                    type="password"
-                    className={inputClassName}
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    disabled={saving}
-                  />
+                  <div className="relative w-full">
+                    <input
+                      id="settings-confirm-new-password"
+                      type={showConfirmNewPassword ? "text" : "password"}
+                      className={`${inputClassName} pr-10`}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      disabled={saving}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                      aria-label={showConfirmNewPassword ? "Hide confirm password" : "Show confirm password"}
+                      disabled={saving}
+                    >
+                      {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>

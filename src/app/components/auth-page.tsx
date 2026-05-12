@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
-import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { authApi, type AuthTokensDTO } from "../api";
 const logoUrl = new URL("../../imports/image.png", import.meta.url).href;
 
@@ -45,6 +45,9 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   const activeEmail = useMemo(() => verificationEmail || email, [verificationEmail, email]);
 
@@ -217,14 +220,25 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={busy}
-                />
+                <div className="relative w-full">
+                  <Input
+                    id="password"
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={busy}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <Button onClick={() => void handleLogin()} disabled={busy} className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
@@ -300,11 +314,43 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               </div>
               <div className="space-y-1.5">
                 <Label>Password</Label>
-                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy} />
+                <div className="relative w-full">
+                  <Input
+                    type={showRegisterPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={busy}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+                  >
+                    {showRegisterPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Confirm Password</Label>
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={busy} />
+                <div className="relative w-full">
+                  <Input
+                    type={showRegisterConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={busy}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={showRegisterConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showRegisterConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <Button onClick={() => void handleRegister()} disabled={busy} className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Account"}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../api";
 
@@ -19,6 +19,7 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const handleRequestCode = () => {
     setError("");
@@ -152,15 +153,26 @@ export function ForgotPasswordPage() {
                 <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
                   New Password
                 </label>
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={busy || success}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#ED1C24] focus:border-[#ED1C24] disabled:opacity-50"
-                  placeholder="••••••••"
-                />
+                <div className="relative w-full">
+                  <input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={busy || success}
+                    className="w-full rounded-md border border-gray-300 px-3 pr-10 py-2 text-sm outline-none focus:ring-2 focus:ring-[#ED1C24] focus:border-[#ED1C24] disabled:opacity-50"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                    disabled={busy || success}
+                  >
+                    {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -586,6 +586,8 @@ export const hrApi = {
         sortDir: params.sortDir,
       })}`,
     ),
+  deleteJobOffer: (jobOfferId: number) =>
+    requestJson<void>(`/api/hr/job-offers/${jobOfferId}`, { method: "DELETE" }),
   createJobOffer: (payload: { title: string; rawText: string }) =>
     requestJson<JobOfferDTO>("/api/hr/job-offers", { method: "POST", body: JSON.stringify(payload) }),
   listEvaluations: (params: { page: number; size: number; jobId?: number; minScore?: number }) =>

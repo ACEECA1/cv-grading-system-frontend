@@ -16,8 +16,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { ArrowLeft, Briefcase, ChevronLeft, ChevronRight, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { formatDate, formatScoreOutOfTen, hrApi, loadStoredAuth, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
 import { toast } from "sonner";
@@ -255,7 +256,6 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
 type JobStatusFilter = "all" | "published" | "draft";
 type JobSortBy = "createdAt" | "title";
 type JobSortDir = "asc" | "desc";
-type VisiblePage = number | "...";
 
 interface UseJobOfferManagementResult {
   page: number;
@@ -265,7 +265,6 @@ interface UseJobOfferManagementResult {
   jobs: JobOffer[];
   totalElements: number;
   safeTotalPages: number;
-  visiblePages: VisiblePage[];
   titleInput: string;
   locationInput: string;
   statusInput: JobStatusFilter;
@@ -284,23 +283,6 @@ interface UseJobOfferManagementResult {
   setJobToDelete: React.Dispatch<React.SetStateAction<number | null>>;
   handleApplyFilters: () => void;
   handleDeleteConfirm: () => Promise<void>;
-}
-
-function buildVisiblePages(page: number, totalPages: number): VisiblePage[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index);
-  }
-
-  const lastPage = totalPages - 1;
-  if (page <= 2) {
-    return [0, 1, 2, "...", lastPage];
-  }
-
-  if (page >= lastPage - 2) {
-    return [0, "...", lastPage - 2, lastPage - 1, lastPage];
-  }
-
-  return [0, "...", page - 1, page, page + 1, "...", lastPage];
 }
 
 function useJobOfferManagement(): UseJobOfferManagementResult {
@@ -376,7 +358,6 @@ function useJobOfferManagement(): UseJobOfferManagementResult {
 
   const safeTotalPages = Math.max(1, totalPages);
   const jobs = useMemo(() => jobOffers.map(mapJobOffer), [jobOffers]);
-  const visiblePages = useMemo(() => buildVisiblePages(page, safeTotalPages), [page, safeTotalPages]);
 
   const handleDeleteConfirm = async () => {
     if (jobToDelete == null) return;
@@ -404,7 +385,6 @@ function useJobOfferManagement(): UseJobOfferManagementResult {
     jobs,
     totalElements,
     safeTotalPages,
-    visiblePages,
     titleInput,
     locationInput,
     statusInput,
@@ -594,89 +574,6 @@ function JobOfferGrid({
   );
 }
 
-function JobOfferPaginationFooter({
-  page,
-  size,
-  totalElements,
-  safeTotalPages,
-  visiblePages,
-  onPageChange,
-  onSizeChange,
-}: {
-  page: number;
-  size: number;
-  totalElements: number;
-  safeTotalPages: number;
-  visiblePages: VisiblePage[];
-  onPageChange: (nextPage: number) => void;
-  onSizeChange: (nextSize: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between w-full pt-4 border-t border-gray-200">
-      <div className="flex items-center gap-2 text-gray-700" style={{ fontSize: 13 }}>
-        <span>Rows per page:</span>
-        <select
-          value={size}
-          onChange={(e) => onSizeChange(Number(e.target.value))}
-          className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20"
-        >
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-        </select>
-        <span className="text-gray-500">{`${totalElements} total`}</span>
-      </div>
-
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={page === 0}
-          onClick={() => onPageChange(Math.max(0, page - 1))}
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        {visiblePages.map((pageItem, index) => {
-          if (pageItem === "...") {
-            return (
-              <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
-                ...
-              </span>
-            );
-          }
-
-          const isActive = pageItem === page;
-          return (
-            <button
-              key={pageItem}
-              onClick={() => onPageChange(pageItem)}
-              className={`h-9 min-w-9 rounded-md border px-3 text-sm font-medium transition ${
-                isActive
-                  ? "bg-[#ED1C24] text-white border-[#ED1C24]"
-                  : "text-gray-700 hover:bg-gray-50 border-gray-300"
-              }`}
-            >
-              {pageItem + 1}
-            </button>
-          );
-        })}
-
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={page >= safeTotalPages - 1}
-          onClick={() => onPageChange(Math.min(safeTotalPages - 1, page + 1))}
-          aria-label="Next page"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function JobOfferDeleteDialog({
   open,
   isDeleting,
@@ -729,7 +626,6 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     jobs,
     totalElements,
     safeTotalPages,
-    visiblePages,
     titleInput,
     locationInput,
     statusInput,
@@ -799,12 +695,11 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found.</Card>
       )}
 
-      <JobOfferPaginationFooter
+      <JobOffersPaginationFooter
         page={page}
         size={size}
         totalElements={totalElements}
-        safeTotalPages={safeTotalPages}
-        visiblePages={visiblePages}
+        totalPages={safeTotalPages}
         onPageChange={setPage}
         onSizeChange={(nextSize) => {
           setSize(nextSize);

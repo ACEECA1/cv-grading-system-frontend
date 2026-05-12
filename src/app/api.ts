@@ -533,12 +533,40 @@ export const userApi = {
 };
 
 export const candidateApi = {
-  listJobOffers: (params: { page: number; size: number; location?: string }) =>
-    requestJson<PageResponse<JobOfferDTO>>(
+  getCandidateJobs: (params: {
+    page: number;
+    size: number;
+    title?: string;
+    location?: string;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+  }) =>
+    requestJson<NestedPageResponse<JobOfferDTO>>(
       `/api/candidate/job-offers${buildQuery({
         page: params.page,
         size: params.size,
+        title: params.title,
         location: params.location,
+        sortBy: params.sortBy,
+        sortDir: params.sortDir,
+      })}`,
+    ),
+  listJobOffers: (params: {
+    page: number;
+    size: number;
+    title?: string;
+    location?: string;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+  }) =>
+    requestJson<NestedPageResponse<JobOfferDTO>>(
+      `/api/candidate/job-offers${buildQuery({
+        page: params.page,
+        size: params.size,
+        title: params.title,
+        location: params.location,
+        sortBy: params.sortBy,
+        sortDir: params.sortDir,
       })}`,
     ),
   getCandidateJobOffer: (jobId: string) =>
@@ -628,6 +656,11 @@ export const adminApi = {
 
 export const systemApi = {
   health: () => requestJson<SystemHealthDTO>("/api/system/health", {}, { auth: false }),
+};
+
+export const api = {
+  getCandidateJobs: candidateApi.getCandidateJobs,
+  withdrawSubmission: candidateApi.withdrawSubmission,
 };
 
 loadStoredAuth();

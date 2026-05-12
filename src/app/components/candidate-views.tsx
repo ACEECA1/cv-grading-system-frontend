@@ -1,20 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "./ui/pagination";
-import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
+import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle, SortAsc, Trash2 } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { ApplicationModal } from "./ApplicationModal";
-import { candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO, type PageResponse } from "../api";
+import { api, candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO } from "../api";
+import { toast } from "sonner";
 
 function statusBadge(status: string) {
   if (status === "SCORED" || status === "EVALUATED") {
@@ -36,16 +41,38 @@ function postedLabel(dateIso: string): string {
   return formatDate(dateIso);
 }
 
+type CandidateSortBy = "createdAt" | "title";
+type CandidateSortDir = "asc" | "desc";
+
+type SortConfig = {
+  sortBy: CandidateSortBy;
+  sortDir: CandidateSortDir;
+};
+
+const SORT_OPTIONS: Array<{ value: string; label: string; config: SortConfig }> = [
+  { value: "createdAt-desc", label: "Newest First", config: { sortBy: "createdAt", sortDir: "desc" } },
+  { value: "createdAt-asc", label: "Oldest First", config: { sortBy: "createdAt", sortDir: "asc" } },
+  { value: "title-asc", label: "Title (A-Z)", config: { sortBy: "title", sortDir: "asc" } },
+  { value: "title-desc", label: "Title (Z-A)", config: { sortBy: "title", sortDir: "desc" } },
+];
+
 export function JobBoard() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
+  const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
-  const [page, setPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ sortBy: "createdAt", sortDir: "desc" });
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [jobsPage, setJobsPage] = useState<PageResponse<JobOfferDTO> | null>(null);
+  const [jobOffers, setJobOffers] = useState<JobOfferDTO[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const selectedSortValue =
+    SORT_OPTIONS.find((option) => option.config.sortBy === sortConfig.sortBy && option.config.sortDir === sortConfig.sortDir)?.value ??
+    SORT_OPTIONS[0].value;
 
   useEffect(() => {
     let cancelled = false;
@@ -53,12 +80,19 @@ export function JobBoard() {
       setLoading(true);
       setError("");
       try {
-        const data = await candidateApi.listJobOffers({
-          page: page - 1,
-          size: 6,
+        const data = await api.getCandidateJobs({
+          page,
+          size,
+          title: title.trim() || undefined,
           location: location.trim() || undefined,
+          sortBy: sortConfig.sortBy,
+          sortDir: sortConfig.sortDir,
         });
-        if (!cancelled) setJobsPage(data);
+        if (!cancelled) {
+          setJobOffers(data?.content || []);
+          setTotalPages(data?.page?.totalPages ?? 1);
+          setTotalElements(data?.page?.totalElements ?? 0);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load job offers.");
       } finally {
@@ -69,16 +103,7 @@ export function JobBoard() {
     return () => {
       cancelled = true;
     };
-  }, [page, location]);
-
-  const visible = useMemo(() => {
-    const content = jobsPage?.content ?? [];
-    if (!search.trim()) return content;
-    const lowered = search.toLowerCase();
-    return content.filter((job) => job.title.toLowerCase().includes(lowered));
-  }, [jobsPage, search]);
-
-  const totalPages = Math.max(1, jobsPage?.totalPages ?? 1);
+  }, [location, page, size, sortConfig.sortBy, sortConfig.sortDir, title]);
 
   return (
     <div className="space-y-6 max-w-[1200px]">
@@ -93,9 +118,12 @@ export function JobBoard() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search in current page..."
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search by title"
             className="pl-9 h-11"
           />
         </div>
@@ -105,11 +133,34 @@ export function JobBoard() {
             value={location}
             onChange={(e) => {
               setLocation(e.target.value);
-              setPage(1);
+              setPage(0);
             }}
             placeholder="Filter by location"
             className="pl-9 h-11"
           />
+        </div>
+        <div className="relative w-full md:w-64">
+          <SortAsc className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Select
+            value={selectedSortValue}
+            onValueChange={(value) => {
+              const option = SORT_OPTIONS.find((item) => item.value === value);
+              if (!option) return;
+              setSortConfig({ ...option.config });
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="h-11 pl-9">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -121,11 +172,11 @@ export function JobBoard() {
 
       {loading ? (
         <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
-      ) : visible.length === 0 ? (
+      ) : jobOffers.length === 0 ? (
         <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found for this filter.</Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {visible.map((job) => (
+          {jobOffers.map((job) => (
             <Card
               key={job.id}
               onClick={() => navigate(`/candidate/jobs/${job.id}`)}
@@ -166,23 +217,17 @@ export function JobBoard() {
         </div>
       )}
 
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious onClick={() => setPage((p) => Math.max(1, p - 1))} />
-          </PaginationItem>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <PaginationItem key={i}>
-              <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>
-                {i + 1}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
-          <PaginationItem>
-            <PaginationNext onClick={() => setPage((p) => Math.min(totalPages, p + 1))} />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+      <JobOffersPaginationFooter
+        page={page}
+        size={size}
+        totalElements={totalElements}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onSizeChange={(nextSize) => {
+          setSize(nextSize);
+          setPage(0);
+        }}
+      />
 
       <ApplicationModal
         jobId={selectedJobId}
@@ -201,6 +246,8 @@ export function MyApplications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submissions, setSubmissions] = useState<CandidateSubmissionDTO[]>([]);
+  const [withdrawTarget, setWithdrawTarget] = useState<CandidateSubmissionDTO | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,6 +271,24 @@ export function MyApplications() {
 
   const processing = submissions.filter((s) => s.evaluation?.status !== "SCORED");
   const completed = submissions.filter((s) => s.evaluation?.status === "SCORED");
+
+  const handleWithdraw = async (submissionId: number) => {
+    const submission = submissions.find((item) => item.cvId === submissionId);
+    if (!submission) return;
+
+    setIsWithdrawing(true);
+    try {
+      await api.withdrawSubmission(submission.jobOffer.id);
+      toast.success("Application withdrawn");
+      setSubmissions((prev) => prev.filter((item) => item.cvId !== submissionId));
+      setSelectedApp((prev) => (prev === submissionId ? null : prev));
+      setWithdrawTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to withdraw application.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-[1100px]">
@@ -249,21 +314,38 @@ export function MyApplications() {
               <h2 style={{ fontSize: 16, fontWeight: 600 }} className="text-gray-700">
                 Processing
               </h2>
-              {processing.map((submission) => (
-                <Card key={submission.cvId} className="p-4 md:p-6">
-                  <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 600 }}>{submission.jobOffer.title}</div>
-                      <div className="text-gray-500" style={{ fontSize: 12 }}>
-                        Submitted {formatDate(submission.uploadDate)}
+              {processing.map((submission) => {
+                const status = String(submission.evaluation?.status || submission.cvStatus);
+                const canWithdraw = ["WAITING", "PROCESSING", "UPLOADED", "OCR_DONE", "SENT_FOR_EVALUATION"].includes(status);
+
+                return (
+                  <Card key={submission.cvId} className="p-4 md:p-6">
+                    <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 600 }}>{submission.jobOffer.title}</div>
+                        <div className="text-gray-500" style={{ fontSize: 12 }}>
+                          Submitted {formatDate(submission.uploadDate)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 ${statusBadge(status)}`} style={{ fontSize: 12, fontWeight: 600 }}>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {status}
+                        </span>
+                        {canWithdraw && (
+                          <button
+                            type="button"
+                            onClick={() => setWithdrawTarget(submission)}
+                            className="text-gray-400 hover:text-red-600 transition-colors p-2"
+                            aria-label={`Withdraw application for ${submission.jobOffer.title}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 ${statusBadge(submission.evaluation?.status || submission.cvStatus)}`} style={{ fontSize: 12, fontWeight: 600 }}>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> {submission.evaluation?.status || submission.cvStatus}
-                    </span>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
 
@@ -373,6 +455,41 @@ export function MyApplications() {
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={withdrawTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !isWithdrawing) {
+            setWithdrawTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Withdraw Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your submission for this position?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setWithdrawTarget(null)} disabled={isWithdrawing}>
+              Keep Application
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                if (withdrawTarget) {
+                  void handleWithdraw(withdrawTarget.cvId);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isWithdrawing}
+            >
+              {isWithdrawing ? "Withdrawing..." : "Withdraw"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

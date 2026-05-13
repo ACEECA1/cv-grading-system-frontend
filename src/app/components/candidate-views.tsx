@@ -272,19 +272,19 @@ export function MyApplications() {
   const processing = submissions.filter((s) => s.evaluation?.status !== "SCORED");
   const completed = submissions.filter((s) => s.evaluation?.status === "SCORED");
 
-  const handleWithdraw = async (submissionId: number) => {
-    const submission = submissions.find((item) => item.cvId === submissionId);
-    if (!submission) return;
-
+  const handleWithdraw = async (jobOfferId: number) => {
     setIsWithdrawing(true);
     try {
-      await api.withdrawSubmission(submission.jobOffer.id);
-      toast.success("Application withdrawn");
-      setSubmissions((prev) => prev.filter((item) => item.cvId !== submissionId));
-      setSelectedApp((prev) => (prev === submissionId ? null : prev));
+      await api.withdrawSubmission(jobOfferId);
+      toast.success("Application withdrawn successfully");
+      setSubmissions((prev) => prev.filter((item) => item.jobOffer.id !== jobOfferId));
+      setSelectedApp((prev) => {
+        const selectedSubmission = submissions.find((item) => item.cvId === prev);
+        return selectedSubmission?.jobOffer.id === jobOfferId ? null : prev;
+      });
       setWithdrawTarget(null);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to withdraw application.");
+    } catch {
+      toast.error("Failed to withdraw application");
     } finally {
       setIsWithdrawing(false);
     }
@@ -316,7 +316,7 @@ export function MyApplications() {
               </h2>
               {processing.map((submission) => {
                 const status = String(submission.evaluation?.status || submission.cvStatus);
-                const canWithdraw = ["WAITING", "PROCESSING", "UPLOADED", "OCR_DONE", "SENT_FOR_EVALUATION"].includes(status);
+                const canWithdraw = status === "WAITING" || status === "PROCESSING";
 
                 return (
                   <Card key={submission.cvId} className="p-4 md:p-6">
@@ -383,9 +383,19 @@ export function MyApplications() {
                             </div>
                           </div>
                           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                            <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-md" style={{ fontSize: 12, fontWeight: 600 }}>
-                              {evaluation?.status || "SCORED"}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-md" style={{ fontSize: 12, fontWeight: 600 }}>
+                                {evaluation?.status || "SCORED"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setWithdrawTarget(submission)}
+                                className="text-gray-400 hover:text-red-600 transition-colors p-2"
+                                aria-label={`Withdraw application for ${submission.jobOffer.title}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -479,7 +489,7 @@ export function MyApplications() {
               onClick={(event) => {
                 event.preventDefault();
                 if (withdrawTarget) {
-                  void handleWithdraw(withdrawTarget.cvId);
+                  void handleWithdraw(withdrawTarget.jobOffer.id);
                 }
               }}
               className="bg-red-600 hover:bg-red-700 text-white"

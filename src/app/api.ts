@@ -618,13 +618,22 @@ export const hrApi = {
     requestJson<void>(`/api/hr/job-offers/${jobOfferId}`, { method: "DELETE" }),
   createJobOffer: (payload: { title: string; rawText: string }) =>
     requestJson<JobOfferDTO>("/api/hr/job-offers", { method: "POST", body: JSON.stringify(payload) }),
-  listEvaluations: (params: { page: number; size: number; jobId?: number; minScore?: number }) =>
+  listEvaluations: (params: {
+    page: number;
+    size: number;
+    jobId?: number;
+    minScore?: number;
+    sortBy?: "score" | "date";
+    direction?: "asc" | "desc";
+  }) =>
     requestJson<PageResponse<HrEvaluationSummaryDTO>>(
       `/api/hr/evaluations${buildQuery({
         page: params.page,
         size: params.size,
         jobId: params.jobId,
         minScore: params.minScore,
+        sortBy: params.sortBy ?? "score",
+        direction: params.direction ?? "desc",
       })}`,
     ),
   getEvaluationById: (evaluationId: number) =>
@@ -636,8 +645,12 @@ export const hrApi = {
 export const jobOffersApi = {
   getJobOffer: (jobId: number) =>
     requestJson<JobOfferDetailDTO>(`/api/hr/job-offers/${jobId}`),
-  getJobApplicants: (jobId: number) =>
-    requestJson<ApplicantSummaryDTO[]>(`/api/hr/job-offers/${jobId}/applicants`),
+  getJobApplicants: (
+    jobId: number,
+    sortBy: "score" | "date" | "name" | "status" = "score",
+    direction: "asc" | "desc" = "desc",
+  ) =>
+    requestJson<ApplicantSummaryDTO[]>(`/api/hr/job-offers/${jobId}/applicants${buildQuery({ sortBy, direction })}`),
   updateJobOffer: (jobId: number, data: UpdateJobOfferPayloadDTO) =>
     requestJson<JobOfferDetailDTO>(`/api/hr/job-offers/${jobId}`, { method: "PUT", body: JSON.stringify(data) }),
   toggleJobStatus: (jobId: number, status: "PUBLISHED" | "CLOSED") =>

@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import {
@@ -88,7 +89,10 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   const [activeTab, setActiveTab] = useState<TabKey>("job-info");
   const [job, setJob] = useState<JobOfferDetailDTO | null>(null);
   const [applicants, setApplicants] = useState<ApplicantSummaryDTO[]>([]);
+  const [sortBy, setSortBy] = useState<"score" | "date" | "name" | "status">("score");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
+  const [applicantsLoading, setApplicantsLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
@@ -123,6 +127,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
     if (jobId == null) {
       setError(t("jobOffers.detail.invalidId"));
       setLoading(false);
+      setApplicantsLoading(false);
       return;
     }
 
@@ -132,13 +137,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
       setError("");
       setFeedback("");
       try {
-        const [jobData, applicantsData] = await Promise.all([
-          jobOffersApi.getJobOffer(jobId),
-          jobOffersApi.getJobApplicants(jobId),
-        ]);
+        const jobData = await jobOffersApi.getJobOffer(jobId);
         if (cancelled) return;
         setJob(jobData);
-        setApplicants(applicantsData);
         syncFormFromJob(jobData);
       } catch (err) {
         if (!cancelled) {
@@ -156,6 +157,37 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
       cancelled = true;
     };
   }, [jobId]);
+
+  useEffect(() => {
+    if (jobId == null) {
+      setApplicantsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const run = async () => {
+      setApplicantsLoading(true);
+      setError("");
+      try {
+        const applicantsData = await jobOffersApi.getJobApplicants(jobId, sortBy, sortDirection);
+        if (cancelled) return;
+        setApplicants(applicantsData);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : t("jobOffers.detail.errors.load"));
+        }
+      } finally {
+        if (!cancelled) {
+          setApplicantsLoading(false);
+        }
+      }
+    };
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, sortBy, sortDirection]);
 
   const addSkill = (
     value: string,
@@ -250,6 +282,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
       setDeleting(false);
     }
   };
+
+  const sortOption = `${sortBy}-${sortDirection}`;
+  const showApplicantsLoadingOverlay = applicantsLoading && applicants.length > 0;
 
   if (loading) {
     return (
@@ -466,7 +501,65 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
             </div>
           ) : (
             <div className="p-4 md:p-6">
-              <div className="w-full overflow-x-auto rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg mb-4">
+                <p className="text-sm font-medium text-gray-700">
+                  {t("jobOffers.detail.applicants.totalApplicants", { count: applicants.length })}
+                </p>
+                <div className="w-full max-w-[320px]">
+                  <Select
+                    value={sortOption}
+                    onValueChange={(value) => {
+                      if (value === "score-desc") {
+                        setSortBy("score");
+                        setSortDirection("desc");
+                        return;
+                      }
+                      if (value === "score-asc") {
+                        setSortBy("score");
+                        setSortDirection("asc");
+                        return;
+                      }
+                      if (value === "date-desc") {
+                        setSortBy("date");
+                        setSortDirection("desc");
+                        return;
+                      }
+                      if (value === "date-asc") {
+                        setSortBy("date");
+                        setSortDirection("asc");
+                        return;
+                      }
+                      if (value === "name-asc") {
+                        setSortBy("name");
+                        setSortDirection("asc");
+                        return;
+                      }
+                      if (value === "name-desc") {
+                        setSortBy("name");
+                        setSortDirection("desc");
+                        return;
+                      }
+                      setSortBy("status");
+                      setSortDirection("desc");
+                    }}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="score-desc">{t("jobOffers.detail.applicants.sort.scoreDesc")}</SelectItem>
+                      <SelectItem value="score-asc">{t("jobOffers.detail.applicants.sort.scoreAsc")}</SelectItem>
+                      <SelectItem value="date-desc">{t("jobOffers.detail.applicants.sort.dateDesc")}</SelectItem>
+                      <SelectItem value="date-asc">{t("jobOffers.detail.applicants.sort.dateAsc")}</SelectItem>
+                      <SelectItem value="name-asc">{t("jobOffers.detail.applicants.sort.nameAsc")}</SelectItem>
+                      <SelectItem value="name-desc">{t("jobOffers.detail.applicants.sort.nameDesc")}</SelectItem>
+                      <SelectItem value="status-desc">{t("jobOffers.detail.applicants.sort.status")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="w-full overflow-x-auto rounded-lg border border-gray-200 relative">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -478,7 +571,13 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {applicants.length === 0 ? (
+                    {applicantsLoading && applicants.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-gray-500 inline-block" />
+                        </TableCell>
+                      </TableRow>
+                    ) : applicants.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-gray-500 py-8">
                           {t("jobOffers.detail.applicants.noApplicants")}
@@ -519,6 +618,11 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                     )}
                   </TableBody>
                 </Table>
+                {showApplicantsLoadingOverlay && (
+                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                  </div>
+                )}
               </div>
             </div>
           )}

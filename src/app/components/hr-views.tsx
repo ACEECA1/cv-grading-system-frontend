@@ -750,6 +750,8 @@ export function CandidatePipeline({
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [minScore, setMinScore] = useState("");
+  const [sortBy, setSortBy] = useState<"score" | "date">("score");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [evaluations, setEvaluations] = useState<PageResponse<HrEvaluationSummaryDTO> | null>(null);
@@ -766,6 +768,8 @@ export function CandidatePipeline({
           size: 10,
           jobId,
           minScore: Number.isFinite(minScoreNumber) ? minScoreNumber : undefined,
+          sortBy,
+          direction: sortDirection,
         });
         if (!cancelled) setEvaluations(data);
       } catch (err) {
@@ -778,10 +782,14 @@ export function CandidatePipeline({
     return () => {
       cancelled = true;
     };
-  }, [jobId, minScore, page]);
+  }, [jobId, minScore, page, sortBy, sortDirection]);
 
   const rows = useMemo(() => (evaluations?.content ?? []).map(mapCandidate), [evaluations]);
   const totalPages = Math.max(1, evaluations?.totalPages ?? 1);
+  const totalCandidates = evaluations?.totalElements ?? rows.length;
+  const sortOption = `${sortBy}-${sortDirection}`;
+  const isInitialLoading = loading && evaluations === null;
+  const showLoadingOverlay = loading && evaluations !== null;
   const title = jobId ? t("jobOffers.pipeline.titleWithId", { id: jobId }) : t("jobOffers.pipeline.title");
 
   return (
@@ -809,8 +817,48 @@ export function CandidatePipeline({
         </Card>
       )}
 
-      <Card className="overflow-hidden">
-        {loading ? (
+      <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg mb-4">
+        <p className="text-sm font-medium text-gray-700">
+          {t("jobOffers.pipeline.candidatesApplied", { count: totalCandidates })}
+        </p>
+        <div className="w-full max-w-[280px]">
+          <Select
+            value={sortOption}
+            onValueChange={(value) => {
+              if (value === "score-desc") {
+                setSortBy("score");
+                setSortDirection("desc");
+                return;
+              }
+              if (value === "score-asc") {
+                setSortBy("score");
+                setSortDirection("asc");
+                return;
+              }
+              if (value === "date-desc") {
+                setSortBy("date");
+                setSortDirection("desc");
+                return;
+              }
+              setSortBy("date");
+              setSortDirection("asc");
+            }}
+          >
+            <SelectTrigger className="bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="score-desc">{t("jobOffers.pipeline.sort.scoreDesc")}</SelectItem>
+              <SelectItem value="score-asc">{t("jobOffers.pipeline.sort.scoreAsc")}</SelectItem>
+              <SelectItem value="date-desc">{t("jobOffers.pipeline.sort.dateDesc")}</SelectItem>
+              <SelectItem value="date-asc">{t("jobOffers.pipeline.sort.dateAsc")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden relative">
+        {isInitialLoading ? (
           <div className="p-6 text-gray-500">{t("jobOffers.pipeline.loading")}</div>
         ) : rows.length === 0 ? (
           <div className="p-6 text-gray-500">{t("jobOffers.pipeline.noEvaluations")}</div>
@@ -853,6 +901,11 @@ export function CandidatePipeline({
               ))}
             </TableBody>
           </Table>
+        )}
+        {showLoadingOverlay && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+          </div>
         )}
       </Card>
 

@@ -208,17 +208,17 @@ function QuestionAccordion({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-4 py-3 flex flex-col items-start gap-2 text-left transition-colors hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
+        className="w-full px-4 py-4 flex items-start justify-between gap-3 text-left transition-colors hover:bg-gray-50"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium text-gray-900 truncate">{question || "-"}</span>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <span className="text-sm font-medium text-gray-900 whitespace-normal text-left break-words">{question || "-"}</span>
           {badge && (
             <span className="shrink-0 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-[11px] font-semibold">
               {badge}
             </span>
           )}
         </div>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`mt-0.5 w-4 h-4 text-gray-500 transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && <div className="border-t border-gray-200 bg-gray-50 px-4 py-4">{children}</div>}
     </div>

@@ -1,7 +1,8 @@
-import { Languages, LogOut, Menu, Settings, X } from "lucide-react";
+import { LogOut, Menu, Settings, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 const logoUrl = new URL("../../imports/image.png", import.meta.url).href;
 
 export type Role = "admin" | "hr" | "candidate";
@@ -40,8 +41,7 @@ export function SidebarShell({
   children,
 }: SidebarShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { t, i18n } = useTranslation();
-  const activeLanguage = i18n.resolvedLanguage?.startsWith("fr") ? "fr" : "en";
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-gray-50 md:flex">
@@ -152,20 +152,7 @@ export function SidebarShell({
       <div className="flex-1 min-w-0 min-h-screen bg-white text-gray-900">
         <header className="border-b border-gray-200 bg-white px-4 py-3 md:px-8">
           <div className="flex items-center justify-end gap-3">
-            <label className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-2.5 py-1.5">
-              <Languages className="h-4 w-4 text-gray-600" />
-              <select
-                value={activeLanguage}
-                onChange={(event) => {
-                  void i18n.changeLanguage(event.target.value);
-                }}
-                className="bg-transparent text-sm text-gray-600 outline-none"
-                aria-label={t("language.switch")}
-              >
-                <option value="en">EN</option>
-                <option value="fr">FR</option>
-              </select>
-            </label>
+            <LanguageSwitcher />
           </div>
         </header>
         <main className="h-full overflow-auto p-4 md:p-8">{children}</main>

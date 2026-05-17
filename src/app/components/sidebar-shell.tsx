@@ -44,7 +44,7 @@ export function SidebarShell({
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gray-50 md:flex">
+    <div className="h-screen w-screen bg-gray-50 md:flex overflow-hidden">
       <button
         type="button"
         onClick={() => setIsMobileOpen(true)}
@@ -68,7 +68,7 @@ export function SidebarShell({
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#556880] text-white flex flex-col p-4 transition-transform duration-150 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen`}
+        } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen max-h-screen overflow-y-auto`}
       >
         <div className="flex justify-end md:hidden">
           <button
@@ -149,7 +149,7 @@ export function SidebarShell({
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 min-h-screen bg-white text-gray-900">
+      <div className="flex-1 min-w-0 h-full bg-white text-gray-900 overflow-y-auto">
         <header className="border-b border-gray-200 bg-white px-4 py-3 md:px-8">
           <div className="flex items-center justify-end gap-3">
             <LanguageSwitcher />

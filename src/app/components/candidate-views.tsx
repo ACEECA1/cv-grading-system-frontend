@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -31,13 +32,13 @@ function statusBadge(status: string) {
   return "bg-amber-50 text-amber-700";
 }
 
-function postedLabel(dateIso: string): string {
+function postedLabel(dateIso: string, t: (key: string, options?: Record<string, unknown>) => string): string {
   const date = new Date(dateIso);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return t("common.messages.unknown");
   const diffHours = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60));
-  if (diffHours < 24) return `${Math.max(1, diffHours)}h ago`;
+  if (diffHours < 24) return t("jobOffers.board.postedHoursAgo", { count: Math.max(1, diffHours) });
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 7) return t("jobOffers.board.postedDaysAgo", { count: diffDays });
   return formatDate(dateIso);
 }
 
@@ -49,14 +50,15 @@ type SortConfig = {
   sortDir: CandidateSortDir;
 };
 
-const SORT_OPTIONS: Array<{ value: string; label: string; config: SortConfig }> = [
-  { value: "createdAt-desc", label: "Newest First", config: { sortBy: "createdAt", sortDir: "desc" } },
-  { value: "createdAt-asc", label: "Oldest First", config: { sortBy: "createdAt", sortDir: "asc" } },
-  { value: "title-asc", label: "Title (A-Z)", config: { sortBy: "title", sortDir: "asc" } },
-  { value: "title-desc", label: "Title (Z-A)", config: { sortBy: "title", sortDir: "desc" } },
+const SORT_OPTIONS: Array<{ value: string; labelKey: string; config: SortConfig }> = [
+  { value: "createdAt-desc", labelKey: "jobOffers.board.sort.newest", config: { sortBy: "createdAt", sortDir: "desc" } },
+  { value: "createdAt-asc", labelKey: "jobOffers.board.sort.oldest", config: { sortBy: "createdAt", sortDir: "asc" } },
+  { value: "title-asc", labelKey: "jobOffers.board.sort.titleAsc", config: { sortBy: "title", sortDir: "asc" } },
+  { value: "title-desc", labelKey: "jobOffers.board.sort.titleDesc", config: { sortBy: "title", sortDir: "desc" } },
 ];
 
 export function JobBoard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -94,7 +96,7 @@ export function JobBoard() {
           setTotalElements(data?.page?.totalElements ?? 0);
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load job offers.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("jobOffers.board.errors.load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -105,12 +107,18 @@ export function JobBoard() {
     };
   }, [location, page, size, sortConfig.sortBy, sortConfig.sortDir, title]);
 
+  const localizeStatus = (status: string) => {
+    const key = `common.status.${status.toLowerCase()}`;
+    const translated = t(key);
+    return translated === key ? status : translated;
+  };
+
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Job Board</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t("jobOffers.board.title")}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Browse open roles and submit your CV.
+          {t("jobOffers.board.subtitle")}
         </p>
       </div>
 
@@ -123,7 +131,7 @@ export function JobBoard() {
               setTitle(e.target.value);
               setPage(0);
             }}
-            placeholder="Search by title"
+            placeholder={t("jobOffers.board.searchByTitle")}
             className="pl-9 h-11"
           />
         </div>
@@ -135,7 +143,7 @@ export function JobBoard() {
               setLocation(e.target.value);
               setPage(0);
             }}
-            placeholder="Filter by location"
+            placeholder={t("jobOffers.board.filterByLocation")}
             className="pl-9 h-11"
           />
         </div>
@@ -151,12 +159,12 @@ export function JobBoard() {
             }}
           >
             <SelectTrigger className="h-11 pl-9">
-              <SelectValue placeholder="Sort By" />
+              <SelectValue placeholder={t("jobOffers.board.sortBy")} />
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -171,9 +179,9 @@ export function JobBoard() {
       )}
 
       {loading ? (
-        <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.board.loading")}</Card>
       ) : jobOffers.length === 0 ? (
-        <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found for this filter.</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.board.noOffers")}</Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {jobOffers.map((job) => (
@@ -184,20 +192,20 @@ export function JobBoard() {
             >
               <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
                 <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded" style={{ fontSize: 11, fontWeight: 600 }}>
-                  {job.status}
+                  {localizeStatus(job.status)}
                 </span>
                 <span className="text-gray-500" style={{ fontSize: 12 }}>
-                  {postedLabel(job.createdAt)}
+                  {postedLabel(job.createdAt, t)}
                 </span>
               </div>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 600 }} className="mb-1">{job.title}</h3>
                 <div className="flex flex-col items-start gap-2 text-gray-600 sm:flex-row sm:items-center sm:gap-4" style={{ fontSize: 13 }}>
                   <span className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" /> {job.structuredJd?.workLocation || "Not specified"}
+                    <MapPin className="w-3.5 h-3.5" /> {job.structuredJd?.workLocation || t("common.messages.notSpecified")}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5" /> {job.structuredJd?.employmentType || "Not specified"}
+                    <Briefcase className="w-3.5 h-3.5" /> {job.structuredJd?.employmentType || t("common.messages.notSpecified")}
                   </span>
                 </div>
               </div>
@@ -210,7 +218,7 @@ export function JobBoard() {
                 }}
                 className="bg-[#ED1C24] hover:bg-[#c81820] text-white mt-auto w-full"
               >
-                Apply Now
+                {t("common.actions.applyNow")}
               </Button>
             </Card>
           ))}
@@ -242,6 +250,7 @@ export function JobBoard() {
 }
 
 export function MyApplications() {
+  const { t } = useTranslation();
   const [selectedApp, setSelectedApp] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -258,7 +267,7 @@ export function MyApplications() {
         const data = await candidateApi.listSubmissions();
         if (!cancelled) setSubmissions(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load submissions.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("candidates.applications.errors.load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -276,7 +285,7 @@ export function MyApplications() {
     setIsWithdrawing(true);
     try {
       await api.withdrawSubmission(jobOfferId);
-      toast.success("Application withdrawn successfully");
+      toast.success(t("candidates.applications.toasts.withdrawn"));
       setSubmissions((prev) => prev.filter((item) => item.jobOffer.id !== jobOfferId));
       setSelectedApp((prev) => {
         const selectedSubmission = submissions.find((item) => item.cvId === prev);
@@ -284,7 +293,7 @@ export function MyApplications() {
       });
       setWithdrawTarget(null);
     } catch {
-      toast.error("Failed to withdraw application");
+      toast.error(t("candidates.applications.toasts.withdrawFailed"));
     } finally {
       setIsWithdrawing(false);
     }
@@ -293,9 +302,9 @@ export function MyApplications() {
   return (
     <div className="space-y-6 max-w-[1100px]">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">My Applications</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t("candidates.applications.title")}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Track your submissions and evaluation results.
+          {t("candidates.applications.subtitle")}
         </p>
       </div>
 
@@ -306,13 +315,13 @@ export function MyApplications() {
       )}
 
       {loading ? (
-        <Card className="p-4 text-center text-gray-500 md:p-8">Loading submissions...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">{t("candidates.applications.loading")}</Card>
       ) : (
         <>
           {processing.length > 0 && (
             <div className="space-y-4">
               <h2 style={{ fontSize: 16, fontWeight: 600 }} className="text-gray-700">
-                Processing
+                {t("candidates.applications.processing")}
               </h2>
               {processing.map((submission) => {
                 const status = String(submission.evaluation?.status || submission.cvStatus);
@@ -324,19 +333,19 @@ export function MyApplications() {
                       <div>
                         <div style={{ fontSize: 16, fontWeight: 600 }}>{submission.jobOffer.title}</div>
                         <div className="text-gray-500" style={{ fontSize: 12 }}>
-                          Submitted {formatDate(submission.uploadDate)}
+                          {t("candidates.applications.submittedOn", { date: formatDate(submission.uploadDate) })}
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 ${statusBadge(status)}`} style={{ fontSize: 12, fontWeight: 600 }}>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {status}
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t(`common.status.${status.toLowerCase()}`)}
                         </span>
                         {canWithdraw && (
                           <button
                             type="button"
                             onClick={() => setWithdrawTarget(submission)}
                             className="text-gray-400 hover:text-red-600 transition-colors p-2"
-                            aria-label={`Withdraw application for ${submission.jobOffer.title}`}
+                            aria-label={t("candidates.applications.a11y.withdrawForTitle", { title: submission.jobOffer.title })}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -351,11 +360,11 @@ export function MyApplications() {
 
           <div className="space-y-4">
             <h2 style={{ fontSize: 16, fontWeight: 600 }} className="text-gray-700">
-              Completed Evaluations
+              {t("candidates.applications.completedEvaluations")}
             </h2>
 
             {completed.length === 0 ? (
-              <Card className="p-4 text-center text-gray-500 md:p-8">No completed evaluations yet.</Card>
+            <Card className="p-4 text-center text-gray-500 md:p-8">{t("candidates.applications.noCompleted")}</Card>
             ) : (
               completed.map((submission) => {
                 const evaluation = submission.evaluation;
@@ -369,7 +378,7 @@ export function MyApplications() {
                     <div className="flex flex-col gap-4 md:flex-row md:gap-6">
                       {scoreValue == null ? (
                         <div className="w-[88px] h-[88px] rounded-full bg-gray-100 text-gray-500 flex items-center justify-center" style={{ fontSize: 12, fontWeight: 700 }}>
-                          N/A
+                          {t("common.messages.na")}
                         </div>
                       ) : (
                         <MatchRing score={scoreValue} size={88} />
@@ -379,19 +388,22 @@ export function MyApplications() {
                           <div>
                             <div style={{ fontSize: 18, fontWeight: 600 }}>{submission.jobOffer.title}</div>
                             <div className="text-gray-500" style={{ fontSize: 12 }}>
-                              Submitted {formatDate(submission.uploadDate)} · Score {formatScoreOutOfTen(score)}
+                              {t("candidates.applications.scoreOnDate", {
+                                date: formatDate(submission.uploadDate),
+                                score: formatScoreOutOfTen(score),
+                              })}
                             </div>
                           </div>
                           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                             <div className="flex items-center gap-1.5">
                               <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-md" style={{ fontSize: 12, fontWeight: 600 }}>
-                                {evaluation?.status || "SCORED"}
+                                {t(`common.status.${String(evaluation?.status || "SCORED").toLowerCase()}`)}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => setWithdrawTarget(submission)}
                                 className="text-gray-400 hover:text-red-600 transition-colors p-2"
-                                aria-label={`Withdraw application for ${submission.jobOffer.title}`}
+                                aria-label={t("candidates.applications.a11y.withdrawForTitle", { title: submission.jobOffer.title })}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -402,7 +414,7 @@ export function MyApplications() {
                               onClick={() => setSelectedApp(selectedApp === submission.cvId ? null : submission.cvId)}
                               className="text-gray-500"
                             >
-                              {selectedApp === submission.cvId ? "Hide Details" : "Show Details"}
+                              {selectedApp === submission.cvId ? t("common.actions.hideDetails") : t("common.actions.showDetails")}
                             </Button>
                           </div>
                         </div>
@@ -410,13 +422,13 @@ export function MyApplications() {
                         {selectedApp === submission.cvId && (
                           <div className="pt-4 mt-4 border-t border-gray-100 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm italic text-gray-700">
-                              "{evaluation?.reasoning || evaluation?.recommendation || "No detailed summary available."}"
+                              "{evaluation?.reasoning || evaluation?.recommendation || t("common.messages.noSummary")}"
                             </div>
 
                             {alignmentValue != null && (
                               <div>
                                 <div className="flex justify-between mb-1.5" style={{ fontSize: 13 }}>
-                                  <span className="text-gray-700 font-medium">Experience Alignment</span>
+                                  <span className="text-gray-700 font-medium">{t("candidates.applications.experienceAlignment")}</span>
                                   <span style={{ fontWeight: 600 }}>{Math.round(alignmentValue)}%</span>
                                 </div>
                                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -431,7 +443,7 @@ export function MyApplications() {
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                               <div>
                                 <div className="text-gray-700 mb-2 flex items-center gap-1.5" style={{ fontSize: 12, fontWeight: 700 }}>
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> MATCHED SKILLS
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> {t("candidates.applications.matchedSkills").toUpperCase()}
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
                                   {(evaluation?.matchedSkills || []).map((skill) => (
@@ -443,7 +455,7 @@ export function MyApplications() {
                               </div>
                               <div>
                                 <div className="text-gray-700 mb-2 flex items-center gap-1.5" style={{ fontSize: 12, fontWeight: 700 }}>
-                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> MISSING SKILLS
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> {t("candidates.applications.missingSkills").toUpperCase()}
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
                                   {(evaluation?.missingSkills || []).map((skill) => (
@@ -476,14 +488,14 @@ export function MyApplications() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Withdraw Application?</AlertDialogTitle>
+            <AlertDialogTitle>{t("candidates.applications.withdrawDialogTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel your submission for this position?
+              {t("candidates.applications.withdrawDialogDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setWithdrawTarget(null)} disabled={isWithdrawing}>
-              Keep Application
+              {t("candidates.applications.keepApplication")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={(event) => {
@@ -495,7 +507,7 @@ export function MyApplications() {
               className="bg-red-600 hover:bg-red-700 text-white"
               disabled={isWithdrawing}
             >
-              {isWithdrawing ? "Withdrawing..." : "Withdraw"}
+              {isWithdrawing ? t("candidates.applications.withdrawing") : t("common.actions.withdraw")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

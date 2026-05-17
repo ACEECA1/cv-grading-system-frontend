@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 
 export type VisiblePageItem = number | "...";
@@ -36,13 +37,14 @@ export function JobOffersPaginationFooter({
   onPageChange: (nextPage: number) => void;
   onSizeChange: (nextSize: number) => void;
 }) {
+  const { t } = useTranslation();
   const safeTotalPages = Math.max(1, totalPages);
   const visiblePages = useMemo(() => buildVisiblePages(page, safeTotalPages), [page, safeTotalPages]);
 
   return (
     <div className="flex items-center justify-between w-full pt-4 border-t border-gray-200">
       <div className="flex items-center gap-2 text-gray-700" style={{ fontSize: 13 }}>
-        <span>Rows per page:</span>
+        <span>{t("common.labels.rowsPerPage")}</span>
         <select
           value={size}
           onChange={(e) => onSizeChange(Number(e.target.value))}
@@ -52,7 +54,7 @@ export function JobOffersPaginationFooter({
           <option value={25}>25</option>
           <option value={50}>50</option>
         </select>
-        <span className="text-gray-500">{`${totalElements} total`}</span>
+        <span className="text-gray-500">{t("common.labels.total", { count: totalElements })}</span>
       </div>
 
       <div className="flex items-center gap-1">
@@ -61,7 +63,7 @@ export function JobOffersPaginationFooter({
           size="icon"
           disabled={page === 0}
           onClick={() => onPageChange(Math.max(0, page - 1))}
-          aria-label="Previous page"
+          aria-label={t("common.actions.previous")}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -96,7 +98,7 @@ export function JobOffersPaginationFooter({
           size="icon"
           disabled={page >= safeTotalPages - 1}
           onClick={() => onPageChange(Math.min(safeTotalPages - 1, page + 1))}
-          aria-label="Next page"
+          aria-label={t("common.actions.next")}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

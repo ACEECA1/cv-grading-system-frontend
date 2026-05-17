@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loadStoredAuth, saveStoredAuth, type UpdateUserDTO, userApi } from "../api";
 
@@ -6,6 +7,7 @@ const inputClassName =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#ED1C24] focus:border-[#ED1C24]";
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -31,7 +33,7 @@ export function SettingsPage() {
         setLastName(user.lastName ?? "");
         setEmail(user.email ?? "");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load profile.");
+        setError(err instanceof Error ? err.message : t("settings.errors.loadProfile"));
       } finally {
         setLoading(false);
       }
@@ -46,22 +48,22 @@ export function SettingsPage() {
     setSuccessMessage("");
 
     if (!firstName.trim() || !lastName.trim()) {
-      setError("First name and last name are required.");
+      setError(t("settings.errors.requiredNames"));
       return;
     }
 
     const hasPasswordChangeInput = Boolean(currentPassword || newPassword || confirmNewPassword);
     if (hasPasswordChangeInput) {
       if (!currentPassword || !newPassword || !confirmNewPassword) {
-        setError("Please complete all password fields.");
+        setError(t("settings.errors.completePasswordFields"));
         return;
       }
       if (newPassword.length < 8) {
-        setError("New password must be at least 8 characters.");
+        setError(t("settings.errors.passwordMinLength"));
         return;
       }
       if (newPassword !== confirmNewPassword) {
-        setError("New password and confirmation do not match.");
+        setError(t("settings.errors.passwordMismatch"));
         return;
       }
     }
@@ -100,9 +102,9 @@ export function SettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setSuccessMessage("Profile updated successfully.");
+      setSuccessMessage(t("settings.success"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update profile.");
+      setError(err instanceof Error ? err.message : t("settings.errors.updateProfile"));
     } finally {
       setSaving(false);
     }
@@ -112,14 +114,14 @@ export function SettingsPage() {
     <div className="-m-4 p-4 min-h-[calc(100vh-4rem)] bg-gray-50 md:-m-8 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-4 md:p-8">
         <div className="mb-6 md:mb-8">
-          <h1 className="text-xl font-semibold text-gray-900 md:text-2xl">Account Settings</h1>
-          <p className="mt-1 text-sm text-gray-600">Manage your personal information and account security.</p>
+          <h1 className="text-xl font-semibold text-gray-900 md:text-2xl">{t("settings.title")}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t("settings.subtitle")}</p>
         </div>
 
         {loading ? (
           <div className="flex items-center gap-2 text-gray-600">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Loading your profile...</span>
+            <span className="text-sm">{t("settings.loading")}</span>
           </div>
         ) : (
           <form onSubmit={(event) => void handleSave(event)} className="space-y-6 md:space-y-8">
@@ -131,11 +133,11 @@ export function SettingsPage() {
             )}
 
             <section>
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Info</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">{t("settings.personalInfo")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-first-name">
-                    First Name
+                    {t("settings.firstName")}
                   </label>
                   <input
                     id="settings-first-name"
@@ -147,7 +149,7 @@ export function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-last-name">
-                    Last Name
+                    {t("settings.lastName")}
                   </label>
                   <input
                     id="settings-last-name"
@@ -160,7 +162,7 @@ export function SettingsPage() {
               </div>
               <div className="mt-4 space-y-2">
                 <label className="block text-sm font-medium text-gray-700" htmlFor="settings-email">
-                  Email Address
+                  {t("settings.emailAddress")}
                 </label>
                 <input
                   id="settings-email"
@@ -174,11 +176,11 @@ export function SettingsPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">{t("settings.changePassword")}</h2>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-current-password">
-                    Current Password
+                    {t("settings.currentPassword")}
                   </label>
                   <div className="relative w-full">
                     <input
@@ -193,7 +195,7 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                      aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                      aria-label={showCurrentPassword ? t("auth.a11y.hideCurrentPassword") : t("auth.a11y.showCurrentPassword")}
                       disabled={saving}
                     >
                       {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -202,7 +204,7 @@ export function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-new-password">
-                    New Password
+                    {t("settings.newPassword")}
                   </label>
                   <div className="relative w-full">
                     <input
@@ -217,7 +219,7 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                      aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                      aria-label={showNewPassword ? t("auth.a11y.hideNewPassword") : t("auth.a11y.showNewPassword")}
                       disabled={saving}
                     >
                       {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -226,7 +228,7 @@ export function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700" htmlFor="settings-confirm-new-password">
-                    Confirm New Password
+                    {t("settings.confirmNewPassword")}
                   </label>
                   <div className="relative w-full">
                     <input
@@ -241,7 +243,7 @@ export function SettingsPage() {
                       type="button"
                       onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                      aria-label={showConfirmNewPassword ? "Hide confirm password" : "Show confirm password"}
+                      aria-label={showConfirmNewPassword ? t("auth.a11y.hideConfirmPassword") : t("auth.a11y.showConfirmPassword")}
                       disabled={saving}
                     >
                       {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -258,7 +260,7 @@ export function SettingsPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-[#ED1C24] hover:bg-[#c81820] text-white px-5 py-2.5 text-sm font-medium disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Save Changes
+                {t("settings.saveChanges")}
               </button>
             </div>
           </form>

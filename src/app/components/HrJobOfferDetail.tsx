@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -25,6 +26,12 @@ function jobStatusClass(status: string): string {
   return "bg-red-50 text-red-700 border-red-200";
 }
 
+function localizeStatus(status: string, t: (key: string) => string): string {
+  const key = `common.status.${status.toLowerCase()}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
+}
+
 function scoreColor(score: number | null): string {
   if (score == null) return "#9ca3af";
   if (score > 80) return "#16a34a";
@@ -32,7 +39,7 @@ function scoreColor(score: number | null): string {
   return "#dc2626";
 }
 
-function MatchScoreRing({ score }: { score: number | null }) {
+function MatchScoreRing({ score, naLabel }: { score: number | null; naLabel: string }) {
   const size = 44;
   const stroke = 5;
   const radius = (size - stroke) / 2;
@@ -57,7 +64,7 @@ function MatchScoreRing({ score }: { score: number | null }) {
         />
       </svg>
       <span className="absolute text-xs font-semibold text-gray-700">
-        {score == null ? "N/A" : `${Math.round(normalizedScore)}%`}
+        {score == null ? naLabel : `${Math.round(normalizedScore)}%`}
       </span>
     </div>
   );
@@ -68,6 +75,7 @@ function normalizeSkill(value: string): string {
 }
 
 export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
+  const { t } = useTranslation();
   const params = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const jobsPath = role === "ADMIN" ? "/admin/jobs" : "/hr/jobs";
@@ -113,7 +121,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
   useEffect(() => {
     if (jobId == null) {
-      setError("Invalid job ID.");
+      setError(t("jobOffers.detail.invalidId"));
       setLoading(false);
       return;
     }
@@ -134,7 +142,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
         syncFormFromJob(jobData);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load job offer details.");
+          setError(err instanceof Error ? err.message : t("jobOffers.detail.errors.load"));
         }
       } finally {
         if (!cancelled) {
@@ -171,7 +179,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   const saveChanges = async () => {
     if (!job || jobId == null) return;
     if (!title.trim()) {
-      setError("Job title is required.");
+      setError(t("jobOffers.detail.errors.titleRequired"));
       return;
     }
 
@@ -203,9 +211,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
       const updated = await jobOffersApi.updateJobOffer(jobId, payload);
       setJob(updated);
       syncFormFromJob(updated);
-      setFeedback("Changes saved.");
+      setFeedback(t("jobOffers.detail.feedback.changesSaved"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save changes.");
+      setError(err instanceof Error ? err.message : t("jobOffers.detail.errors.save"));
     } finally {
       setSaving(false);
     }
@@ -220,9 +228,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
     try {
       const updated = await jobOffersApi.toggleJobStatus(jobId, nextStatus);
       setJob(updated);
-      setFeedback(`Status set to ${updated.status}.`);
+      setFeedback(t("jobOffers.detail.feedback.statusSet", { status: localizeStatus(updated.status, t) }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status.");
+      setError(err instanceof Error ? err.message : t("jobOffers.detail.errors.updateStatus"));
     } finally {
       setToggling(false);
     }
@@ -237,7 +245,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
       await jobOffersApi.deleteJobOffer(jobId);
       navigate(jobsPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete job.");
+      setError(err instanceof Error ? err.message : t("jobOffers.detail.errors.delete"));
     } finally {
       setDeleting(false);
     }
@@ -257,7 +265,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
     return (
       <div className="bg-gray-50 min-h-full p-4 md:p-6">
         <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-6 text-red-700">
-          {error || "Job offer not found."}
+          {error || t("jobOffers.detail.notFound")}
         </div>
       </div>
     );
@@ -272,7 +280,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
             onClick={() => navigate(jobsPath)}
             className="text-sm text-gray-600 hover:text-gray-900"
           >
-            ← Back to Job Offers
+            ← {t("common.actions.backToJobOffers")}
           </button>
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -282,13 +290,13 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 className={`inline-flex items-center px-2.5 py-1 rounded-md border ${jobStatusClass(job.status)}`}
                 style={{ fontSize: 12, fontWeight: 600 }}
               >
-                {job.status}
+                {localizeStatus(job.status, t)}
               </span>
             </div>
 
             <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
               <Button variant="outline" onClick={() => void toggleStatus()} disabled={toggling || deleting}>
-                {toggling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Toggle Status"}
+                {toggling ? <Loader2 className="w-4 h-4 animate-spin" /> : t("jobOffers.detail.toggleStatus")}
               </Button>
               <button
                 type="button"
@@ -296,7 +304,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 disabled={deleting || toggling}
                 className="text-sm font-medium text-[#ED1C24] hover:text-[#c81820] disabled:opacity-50"
               >
-                {deleting ? "Deleting..." : "Delete Job"}
+                {deleting ? t("jobOffers.detail.deleting") : t("jobOffers.detail.deleteJob")}
               </button>
             </div>
           </div>
@@ -319,7 +327,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                   activeTab === "job-info" ? "border-[#ED1C24] text-[#ED1C24]" : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Job Info
+                {t("jobOffers.detail.tabs.jobInfo")}
               </button>
               <button
                 type="button"
@@ -328,7 +336,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                   activeTab === "applicants" ? "border-[#ED1C24] text-[#ED1C24]" : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Applicants
+                {t("jobOffers.detail.tabs.applicants")}
               </button>
             </div>
           </div>
@@ -337,58 +345,58 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
             <div className="space-y-6 p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <Label>Job Title</Label>
+                  <Label>{t("jobOffers.detail.fields.jobTitle")}</Label>
                   <Input value={title} onChange={(e) => setTitle(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Location</Label>
-                  <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Algiers" />
+                  <Label>{t("jobOffers.detail.fields.location")}</Label>
+                  <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t("jobOffers.list.filters.locationPlaceholder")} />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>Employment Type</Label>
+                  <Label>{t("jobOffers.detail.fields.employmentType")}</Label>
                   <select
                     value={employmentType}
                     onChange={(e) => setEmploymentType(e.target.value)}
                     className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/40"
                   >
-                    <option value="">Select employment type</option>
-                    <option value="Full-Time">Full-Time</option>
-                    <option value="Part-Time">Part-Time</option>
-                    <option value="Hybrid">Hybrid</option>
+                    <option value="">{t("jobOffers.detail.employmentTypes.select")}</option>
+                    <option value="Full-Time">{t("jobOffers.detail.employmentTypes.fullTime")}</option>
+                    <option value="Part-Time">{t("jobOffers.detail.employmentTypes.partTime")}</option>
+                    <option value="Hybrid">{t("jobOffers.detail.employmentTypes.hybrid")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>Experience Range</Label>
+                  <Label>{t("jobOffers.detail.fields.experienceRange")}</Label>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <Input
                       value={minExperience}
                       onChange={(e) => setMinExperience(e.target.value)}
-                      placeholder="Min years"
+                      placeholder={t("jobOffers.detail.fields.minYears")}
                     />
                     <Input
                       value={maxExperience}
                       onChange={(e) => setMaxExperience(e.target.value)}
-                      placeholder="Max years"
+                      placeholder={t("jobOffers.detail.fields.maxYears")}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label>Job Description / Responsibilities</Label>
+                <Label>{t("jobOffers.detail.fields.responsibilities")}</Label>
                 <Textarea
                   className="min-h-[170px]"
                   value={responsibilitiesText}
                   onChange={(e) => setResponsibilitiesText(e.target.value)}
-                  placeholder="One responsibility per line"
+                  placeholder={t("jobOffers.detail.fields.responsibilitiesPlaceholder")}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label>Required Skills</Label>
+                  <Label>{t("jobOffers.detail.fields.requiredSkills")}</Label>
                   <Input
                     value={requiredSkillInput}
                     onChange={(e) => setRequiredSkillInput(e.target.value)}
@@ -398,7 +406,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                         addSkill(requiredSkillInput, requiredSkills, setRequiredSkills, setRequiredSkillInput);
                       }
                     }}
-                    placeholder="Type a skill and press Enter"
+                    placeholder={t("jobOffers.detail.fields.skillPlaceholder")}
                   />
                   <div className="flex flex-wrap gap-2">
                     {requiredSkills.map((skill, index) => (
@@ -417,7 +425,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Preferred Skills</Label>
+                  <Label>{t("jobOffers.detail.fields.preferredSkills")}</Label>
                   <Input
                     value={preferredSkillInput}
                     onChange={(e) => setPreferredSkillInput(e.target.value)}
@@ -427,7 +435,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                         addSkill(preferredSkillInput, preferredSkills, setPreferredSkills, setPreferredSkillInput);
                       }
                     }}
-                    placeholder="Type a skill and press Enter"
+                    placeholder={t("jobOffers.detail.fields.skillPlaceholder")}
                   />
                   <div className="flex flex-wrap gap-2">
                     {preferredSkills.map((skill, index) => (
@@ -452,7 +460,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                   disabled={saving || toggling || deleting}
                   className="bg-[#ED1C24] hover:bg-[#c81820] text-white"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("jobOffers.detail.saveChanges")}
                 </Button>
               </div>
             </div>
@@ -462,18 +470,18 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Candidate Name</TableHead>
-                      <TableHead>Match Score</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Application Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("jobOffers.detail.applicants.candidateName")}</TableHead>
+                      <TableHead>{t("jobOffers.detail.applicants.matchScore")}</TableHead>
+                      <TableHead>{t("jobOffers.detail.applicants.status")}</TableHead>
+                      <TableHead>{t("jobOffers.detail.applicants.applicationDate")}</TableHead>
+                      <TableHead className="text-right">{t("jobOffers.detail.applicants.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {applicants.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-gray-500 py-8">
-                          No applicants found for this job offer.
+                          {t("jobOffers.detail.applicants.noApplicants")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -481,11 +489,11 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                         <TableRow key={`${applicant.evaluationId ?? "none"}-${index}`}>
                           <TableCell style={{ fontWeight: 500 }}>{applicant.candidateName}</TableCell>
                           <TableCell>
-                            <MatchScoreRing score={applicant.matchScore} />
+                            <MatchScoreRing score={applicant.matchScore} naLabel={t("common.messages.na")} />
                           </TableCell>
                           <TableCell>
                             <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700" style={{ fontSize: 11, fontWeight: 600 }}>
-                              {applicant.status}
+                              {localizeStatus(applicant.status, t)}
                             </span>
                           </TableCell>
                           <TableCell className="text-gray-600">{formatDate(applicant.applicationDate)}</TableCell>
@@ -503,7 +511,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                                 navigate(`/hr/pipeline/evaluation/${applicant.evaluationId}`);
                               }}
                             >
-                              View Evaluation
+                              {t("jobOffers.detail.applicants.viewEvaluation")}
                             </Button>
                           </TableCell>
                         </TableRow>

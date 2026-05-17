@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -27,6 +28,12 @@ function statusClass(status: string): string {
   if (status === "SCORED" || status === "PUBLISHED") return "bg-green-50 text-green-700";
   if (status === "FAILED") return "bg-red-50 text-red-700";
   return "bg-amber-50 text-amber-700";
+}
+
+function localizeStatus(status: string, t: (key: string) => string): string {
+  const key = `common.status.${status.toLowerCase()}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
 }
 
 function MetricCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
@@ -66,7 +73,7 @@ function mapJobOffer(value: JobOfferDTO): JobOffer {
     id: value.id,
     title: value.title,
     status: value.status,
-    location: value.structuredJd?.workLocation || "Not specified",
+    location: value.structuredJd?.workLocation || "",
     createdAt: value.createdAt,
   };
 }
@@ -76,14 +83,15 @@ function mapCandidate(value: HrEvaluationSummaryDTO): Candidate {
     evaluationId: value.evaluationId,
     status: value.status,
     overallScore: value.overallScore,
-    candidateName: value.candidateFullName || "Unknown candidate",
-    jobTitle: value.jobOfferTitle || "Unknown job",
+    candidateName: value.candidateFullName || "",
+    jobTitle: value.jobOfferTitle || "",
     cvUploadDate: value.cvUploadDate,
     cvId: value.cvId,
   };
 }
 
 export function HRDashboard({ createJobPath }: { createJobPath: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -106,7 +114,7 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
         setAverageScore(stats.averageMatchScore);
         setRecentJobs(offers.content.map(mapJobOffer));
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load dashboard.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("dashboard.hr.errors.load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -121,13 +129,13 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
     <div className="space-y-6 max-w-[1200px]">
       <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold md:text-3xl">HR Dashboard</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">{t("dashboard.hr.title")}</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
-            Live recruitment stats from backend data.
+            {t("dashboard.hr.subtitle")}
           </p>
         </div>
         <Button onClick={() => navigate(createJobPath)} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
-          + New Job Offer
+          {t("dashboard.hr.newJobOffer")}
         </Button>
       </div>
 
@@ -138,26 +146,26 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
       )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <MetricCard label="CVs Processed" value={String(totalCvsProcessed)} icon={<FileText className="w-4 h-4" />} />
-        <MetricCard label="Average Match Score" value={formatScoreOutOfTen(averageScore)} icon={<TrendingUp className="w-4 h-4" />} />
+        <MetricCard label={t("dashboard.hr.ctsProcessed")} value={String(totalCvsProcessed)} icon={<FileText className="w-4 h-4" />} />
+        <MetricCard label={t("dashboard.hr.averageMatchScore")} value={formatScoreOutOfTen(averageScore)} icon={<TrendingUp className="w-4 h-4" />} />
       </div>
 
       <Card className="overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h3 style={{ fontSize: 16, fontWeight: 600 }}>Recent Job Offers</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600 }}>{t("dashboard.hr.recentJobOffers")}</h3>
         </div>
         {loading ? (
-          <div className="p-6 text-gray-500">Loading jobs...</div>
+          <div className="p-6 text-gray-500">{t("dashboard.hr.loadingJobs")}</div>
         ) : recentJobs.length === 0 ? (
-          <div className="p-6 text-gray-500">No job offers found.</div>
+          <div className="p-6 text-gray-500">{t("dashboard.hr.noJobs")}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{t("common.labels.title")}</TableHead>
+                <TableHead>{t("common.labels.status")}</TableHead>
+                <TableHead>{t("common.labels.location")}</TableHead>
+                <TableHead>{t("common.labels.created")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -166,10 +174,10 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
                   <TableCell style={{ fontWeight: 500 }}>{job.title}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-0.5 rounded ${statusClass(job.status)}`} style={{ fontSize: 11, fontWeight: 600 }}>
-                      {job.status}
+                      {localizeStatus(job.status, t)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-gray-600">{job.location}</TableCell>
+                  <TableCell className="text-gray-600">{job.location || t("common.messages.notSpecified")}</TableCell>
                   <TableCell className="text-gray-500">{formatDate(job.createdAt)}</TableCell>
                 </TableRow>
               ))}
@@ -182,6 +190,7 @@ export function HRDashboard({ createJobPath }: { createJobPath: string }) {
 }
 
 export function JobOfferCreate({ backTo }: { backTo: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [rawText, setRawText] = useState("");
@@ -193,7 +202,7 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
     setError("");
     setSuccess("");
     if (!title.trim() || !rawText.trim()) {
-      setError("Title and raw description are required.");
+      setError(t("jobOffers.create.errors.required"));
       return;
     }
     setLoading(true);
@@ -202,11 +211,11 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
         title: title.trim(),
         rawText: rawText.trim(),
       });
-      setSuccess(`Job offer #${created.id} created with status ${created.status}.`);
+      setSuccess(t("jobOffers.create.success", { id: created.id, status: localizeStatus(created.status, t) }));
       setTitle("");
       setRawText("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create job offer.");
+      setError(err instanceof Error ? err.message : t("jobOffers.create.errors.create"));
     } finally {
       setLoading(false);
     }
@@ -216,24 +225,24 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
     <div className="max-w-[900px] space-y-6">
       <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-bold md:text-3xl">Create Job Offer</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">{t("jobOffers.create.title")}</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
-            Submit a title and raw description. Backend will process and publish when parsing succeeds.
+            {t("jobOffers.create.subtitle")}
           </p>
         </div>
         <Button variant="outline" onClick={() => navigate(backTo)}>
-          Cancel
+          {t("jobOffers.create.cancel")}
         </Button>
       </div>
       <Card className="space-y-5 p-4 md:p-8">
         <div className="space-y-1.5">
-          <Label>Job Title</Label>
-          <Input placeholder="e.g. Senior Java Developer" value={title} onChange={(e) => setTitle(e.target.value)} disabled={loading} />
+          <Label>{t("jobOffers.create.jobTitle")}</Label>
+          <Input placeholder={t("jobOffers.create.titlePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} disabled={loading} />
         </div>
         <div className="space-y-1.5">
-          <Label>Raw Job Description</Label>
+          <Label>{t("jobOffers.create.rawDescription")}</Label>
           <Textarea
-            placeholder="Paste the hiring manager's unstructured text block here..."
+            placeholder={t("jobOffers.create.descriptionPlaceholder")}
             className="min-h-[220px]"
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
@@ -245,7 +254,7 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
         <div className="flex justify-stretch md:justify-end">
           <Button onClick={() => void publish()} disabled={loading} className="bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? "Submitting..." : "Create Job Offer"}
+            {loading ? t("jobOffers.create.submitting") : t("jobOffers.create.createBtn")}
           </Button>
         </div>
       </Card>
@@ -285,7 +294,7 @@ interface UseJobOfferManagementResult {
   handleDeleteConfirm: () => Promise<void>;
 }
 
-function useJobOfferManagement(): UseJobOfferManagementResult {
+function useJobOfferManagement(t: (key: string, options?: Record<string, unknown>) => string): UseJobOfferManagementResult {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
@@ -341,7 +350,7 @@ function useJobOfferManagement(): UseJobOfferManagementResult {
         }
       } catch (err) {
         if (!isCancelled) {
-          setErrorMessage(err instanceof Error ? err.message : "Failed to load job offers.");
+          setErrorMessage(err instanceof Error ? err.message : t("jobOffers.list.errors.load"));
         }
       } finally {
         if (!isCancelled) {
@@ -366,12 +375,12 @@ function useJobOfferManagement(): UseJobOfferManagementResult {
     try {
       setIsDeleting(true);
       await hrApi.deleteJobOffer(deletingJobId);
-      toast.success("Job offer deleted successfully");
+      toast.success(t("jobOffers.list.toasts.deleteSuccess"));
       setJobOffers((prev) => prev.filter((job) => job.id !== deletingJobId));
       setTotalElements((prev) => Math.max(0, prev - 1));
       setJobToDelete(null);
     } catch {
-      toast.error("Failed to delete job offer");
+      toast.error(t("jobOffers.list.toasts.deleteFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -433,11 +442,12 @@ function JobOfferFiltersCard({
   onSortDirChange: (value: JobSortDir) => void;
   onApply: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Card className="p-4 md:p-6 space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
-          <Label htmlFor="search-title">Search Title</Label>
+          <Label htmlFor="search-title">{t("jobOffers.list.filters.searchTitle")}</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -448,13 +458,13 @@ function JobOfferFiltersCard({
               onKeyDown={(e) => {
                 if (e.key === "Enter") onApply();
               }}
-              placeholder="e.g. Backend Engineer"
+              placeholder={t("jobOffers.list.filters.titlePlaceholder")}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="search-location">Search Location</Label>
+          <Label htmlFor="search-location">{t("jobOffers.list.filters.searchLocation")}</Label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -465,44 +475,44 @@ function JobOfferFiltersCard({
               onKeyDown={(e) => {
                 if (e.key === "Enter") onApply();
               }}
-              placeholder="e.g. Paris, Remote"
+              placeholder={t("jobOffers.list.filters.locationPlaceholder")}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label>Status</Label>
+          <Label>{t("jobOffers.list.filters.status")}</Label>
           <Select value={statusInput} onValueChange={(value) => onStatusChange(value as JobStatusFilter)}>
             <SelectTrigger>
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t("jobOffers.list.filters.all")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="all">{t("jobOffers.list.filters.all")}</SelectItem>
+              <SelectItem value="published">{t("jobOffers.list.filters.published")}</SelectItem>
+              <SelectItem value="draft">{t("jobOffers.list.filters.draft")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1.5">
-          <Label>Sort By</Label>
+          <Label>{t("jobOffers.list.filters.sortBy")}</Label>
           <div className="grid grid-cols-2 gap-2">
             <Select value={sortBy} onValueChange={(value) => onSortByChange(value as JobSortBy)}>
               <SelectTrigger>
-                <SelectValue placeholder="Date Created" />
+                <SelectValue placeholder={t("jobOffers.list.filters.dateCreated")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="createdAt">Date Created</SelectItem>
-                <SelectItem value="title">Title</SelectItem>
+                <SelectItem value="createdAt">{t("jobOffers.list.filters.dateCreated")}</SelectItem>
+                <SelectItem value="title">{t("common.labels.title")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortDir} onValueChange={(value) => onSortDirChange(value as JobSortDir)}>
               <SelectTrigger>
-                <SelectValue placeholder="Desc" />
+                <SelectValue placeholder={t("jobOffers.list.filters.desc")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="desc">Desc</SelectItem>
-                <SelectItem value="asc">Asc</SelectItem>
+                <SelectItem value="desc">{t("jobOffers.list.filters.desc")}</SelectItem>
+                <SelectItem value="asc">{t("jobOffers.list.filters.asc")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -511,7 +521,7 @@ function JobOfferFiltersCard({
 
       <div className="flex justify-end">
         <Button onClick={onApply} disabled={isLoading}>
-          Apply Filters
+          {t("jobOffers.list.filters.apply")}
         </Button>
       </div>
     </Card>
@@ -529,6 +539,7 @@ function JobOfferGrid({
   onSelect: (job: JobOffer) => void;
   onRequestDelete: (jobId: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {jobs.map((job) => (
@@ -542,17 +553,17 @@ function JobOfferGrid({
               <Briefcase className="w-5 h-5" />
             </div>
             <span className={`px-2 py-0.5 rounded ${statusClass(job.status)}`} style={{ fontSize: 11, fontWeight: 700 }}>
-              {job.status}
+              {localizeStatus(job.status, t)}
             </span>
           </div>
           <h3 style={{ fontSize: 17, fontWeight: 600 }} className="mb-1">{job.title}</h3>
           <div className="text-gray-500 mb-4" style={{ fontSize: 12 }}>
-            {job.location} · Created {formatDate(job.createdAt)}
+            {(job.location || t("common.messages.notSpecified"))} · {t("jobOffers.list.createdOn", { date: formatDate(job.createdAt) })}
           </div>
           <div className="flex flex-col items-start justify-between gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 text-gray-700" style={{ fontSize: 13 }}>
               <Users className="w-4 h-4 text-gray-500" />
-              Click to see evaluations
+              {t("jobOffers.list.clickToSeeEvaluations")}
             </div>
             {hasDeletePermission && (
               <button
@@ -562,7 +573,7 @@ function JobOfferGrid({
                   onRequestDelete(job.id);
                 }}
                 className="text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors"
-                aria-label="Delete job offer"
+                aria-label={t("jobOffers.list.a11y.deleteJobOffer")}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -587,18 +598,19 @@ function JobOfferDeleteDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Job Offer?</AlertDialogTitle>
+          <AlertDialogTitle>{t("jobOffers.list.deleteDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to permanently delete this job offer? This action cannot be undone.
+            {t("jobOffers.list.deleteDialog.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel} disabled={isDeleting}>
-            Cancel
+            {t("common.actions.cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={(event) => {
@@ -608,7 +620,7 @@ function JobOfferDeleteDialog({
             className="bg-red-600 hover:bg-red-700 text-white"
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Confirm Delete"}
+            {isDeleting ? t("jobOffers.list.deleteDialog.deleting") : t("jobOffers.list.deleteDialog.confirmDelete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -617,6 +629,7 @@ function JobOfferDeleteDialog({
 }
 
 export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobOffer) => string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     page,
@@ -644,14 +657,14 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     setJobToDelete,
     handleApplyFilters,
     handleDeleteConfirm,
-  } = useJobOfferManagement();
+  } = useJobOfferManagement(t);
 
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Available Job Offers</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t("jobOffers.list.title")}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Select a job offer to inspect submitted evaluations.
+          {t("jobOffers.list.subtitle")}
         </p>
       </div>
 
@@ -683,7 +696,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
       />
 
       {isLoading ? (
-        <Card className="p-4 text-center text-gray-500 md:p-8">Loading job offers...</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.list.loading")}</Card>
       ) : jobs.length ? (
         <JobOfferGrid
           jobs={jobs}
@@ -692,7 +705,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
           onRequestDelete={setJobToDelete}
         />
       ) : (
-        <Card className="p-4 text-center text-gray-500 md:p-8">No job offers found.</Card>
+        <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.list.noOffers")}</Card>
       )}
 
       <JobOffersPaginationFooter
@@ -733,6 +746,7 @@ export function CandidatePipeline({
   evaluationRoutePrefix: string;
   backTo?: string;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [minScore, setMinScore] = useState("");
@@ -755,7 +769,7 @@ export function CandidatePipeline({
         });
         if (!cancelled) setEvaluations(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load evaluations.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("jobOffers.pipeline.errors.load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -768,24 +782,24 @@ export function CandidatePipeline({
 
   const rows = useMemo(() => (evaluations?.content ?? []).map(mapCandidate), [evaluations]);
   const totalPages = Math.max(1, evaluations?.totalPages ?? 1);
-  const title = jobId ? `Job #${jobId} · Evaluations` : "Candidate Pipeline";
+  const title = jobId ? t("jobOffers.pipeline.titleWithId", { id: jobId }) : t("jobOffers.pipeline.title");
 
   return (
     <div className="space-y-6 max-w-[1200px]">
       {backTo && (
         <button onClick={() => navigate(backTo)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" style={{ fontSize: 13 }}>
-          <ArrowLeft className="w-4 h-4" /> Back to job offers
+          <ArrowLeft className="w-4 h-4" /> {t("jobOffers.pipeline.backToJobOffers")}
         </button>
       )}
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">{title}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Backend evaluations list. Scores are displayed as /10.
+          {t("jobOffers.pipeline.subtitle")}
         </p>
       </div>
 
       <div className="w-full md:max-w-[220px]">
-        <Label>Minimum score (/10)</Label>
+        <Label>{t("common.labels.minimumScore")}</Label>
         <Input value={minScore} onChange={(e) => setMinScore(e.target.value)} placeholder="e.g. 7.5" />
       </div>
 
@@ -797,42 +811,42 @@ export function CandidatePipeline({
 
       <Card className="overflow-hidden">
         {loading ? (
-          <div className="p-6 text-gray-500">Loading evaluations...</div>
+          <div className="p-6 text-gray-500">{t("jobOffers.pipeline.loading")}</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-gray-500">No evaluations found.</div>
+          <div className="p-6 text-gray-500">{t("jobOffers.pipeline.noEvaluations")}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Candidate</TableHead>
-                <TableHead>Job</TableHead>
-                <TableHead>Uploaded</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>{t("jobOffers.pipeline.table.candidate")}</TableHead>
+                <TableHead>{t("jobOffers.pipeline.table.job")}</TableHead>
+                <TableHead>{t("jobOffers.pipeline.table.uploaded")}</TableHead>
+                <TableHead>{t("jobOffers.pipeline.table.score")}</TableHead>
+                <TableHead>{t("jobOffers.pipeline.table.status")}</TableHead>
+                <TableHead className="text-right">{t("jobOffers.pipeline.table.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((candidate) => (
                 <TableRow key={candidate.evaluationId}>
-                  <TableCell style={{ fontWeight: 500 }}>{candidate.candidateName}</TableCell>
-                  <TableCell className="text-gray-600">{candidate.jobTitle}</TableCell>
+                  <TableCell style={{ fontWeight: 500 }}>{candidate.candidateName || t("common.messages.unknown")}</TableCell>
+                  <TableCell className="text-gray-600">{candidate.jobTitle || t("common.messages.unknown")}</TableCell>
                   <TableCell className="text-gray-600">{formatDate(candidate.cvUploadDate)}</TableCell>
                   <TableCell>
                     {candidate.overallScore == null ? (
-                      <span className="text-gray-500 text-sm">N/A</span>
+                      <span className="text-gray-500 text-sm">{t("jobOffers.pipeline.noScore")}</span>
                     ) : (
                       <MatchRing score={candidate.overallScore} size={48} />
                     )}
                   </TableCell>
                   <TableCell>
                     <span className={`px-2 py-0.5 rounded ${statusClass(candidate.status)}`} style={{ fontSize: 11, fontWeight: 600 }}>
-                      {candidate.status}
+                      {localizeStatus(candidate.status, t)}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => navigate(`${evaluationRoutePrefix}/${candidate.evaluationId}`)}>
-                      View
+                      {t("jobOffers.pipeline.view")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -844,10 +858,10 @@ export function CandidatePipeline({
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button variant="outline" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
-          Previous
+          {t("common.actions.previous")}
         </Button>
         <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>
-          Next
+          {t("common.actions.next")}
         </Button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Activity, CheckCircle2, Circle, Loader2, Mail, RefreshCw, UserCheck, Users } from "lucide-react";
@@ -31,6 +32,7 @@ function MetricCard({
 }
 
 export function AdminDashboard() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<UserDTO[]>([]);
@@ -49,7 +51,7 @@ export function AdminDashboard() {
         setTotalCvsProcessed(stats.totalCvsProcessed);
         setAverageScore(stats.averageMatchScore);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load dashboard.");
+        if (!cancelled) setError(err instanceof Error ? err.message : t("dashboard.hr.errors.load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -63,9 +65,9 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t("dashboard.admin.title")}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Overview based on live backend data.
+          {t("dashboard.admin.subtitle")}
         </p>
       </div>
       {error && (
@@ -74,18 +76,18 @@ export function AdminDashboard() {
         </Card>
       )}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <MetricCard label="Total CVs Processed" value={String(totalCvsProcessed)} icon={<Users className="w-4 h-4" />} />
-        <MetricCard label="Average Match Score" value={formatScoreOutOfTen(averageScore)} icon={<Activity className="w-4 h-4" />} />
-        <MetricCard label="Pending HR Approvals" value={String(pending.length)} icon={<UserCheck className="w-4 h-4" />} highlight />
+        <MetricCard label={t("dashboard.admin.totalCvsProcessed")} value={String(totalCvsProcessed)} icon={<Users className="w-4 h-4" />} />
+        <MetricCard label={t("dashboard.admin.averageMatchScore")} value={formatScoreOutOfTen(averageScore)} icon={<Activity className="w-4 h-4" />} />
+        <MetricCard label={t("dashboard.admin.pendingHrApprovals")} value={String(pending.length)} icon={<UserCheck className="w-4 h-4" />} highlight />
       </div>
       <Card className="p-6">
         <h3 style={{ fontSize: 16, fontWeight: 600 }} className="mb-4">
-          Recently Registered HR Accounts
+          {t("dashboard.admin.recentHrAccounts")}
         </h3>
         {loading ? (
-          <div className="text-gray-500">Loading...</div>
+          <div className="text-gray-500">{t("dashboard.admin.loading")}</div>
         ) : pending.length === 0 ? (
-          <div className="text-gray-500">No pending HR accounts.</div>
+          <div className="text-gray-500">{t("dashboard.admin.noPendingHrAccounts")}</div>
         ) : (
           <div className="space-y-3">
             {pending.slice(0, 5).map((user) => (
@@ -132,18 +134,21 @@ function latencyFromMessage(message: string | null, fallback: number | null): nu
   return fallback;
 }
 
-function formatRelativeTime(value: string | null): string {
+function formatRelativeTime(
+  value: string | null,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   const diffMs = Math.max(Date.now() - date.getTime(), 0);
-  if (diffMs < 60_000) return "Just now";
+  if (diffMs < 60_000) return t("systemHealth.justNow");
   const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t("systemHealth.minutesAgo", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("systemHealth.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return t("systemHealth.daysAgo", { count: days });
 }
 
 function resolveHealthLevel(reachable: boolean, latencyMs: number | null): HealthLevel {
@@ -152,12 +157,20 @@ function resolveHealthLevel(reachable: boolean, latencyMs: number | null): Healt
   return "operational";
 }
 
-function StatusBadge({ checking, level }: { checking: boolean; level: HealthLevel }) {
+function StatusBadge({
+  checking,
+  level,
+  labels,
+}: {
+  checking: boolean;
+  level: HealthLevel;
+  labels: { checking: string; critical: string; degraded: string; operational: string };
+}) {
   if (checking) {
     return (
       <span className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
         <Circle className="h-2.5 w-2.5 fill-current text-gray-500" />
-        Checking...
+        {labels.checking}
       </span>
     );
   }
@@ -166,7 +179,7 @@ function StatusBadge({ checking, level }: { checking: boolean; level: HealthLeve
     return (
       <span className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
         <Circle className="h-2.5 w-2.5 animate-pulse fill-current text-red-600" />
-        Critical
+        {labels.critical}
       </span>
     );
   }
@@ -175,7 +188,7 @@ function StatusBadge({ checking, level }: { checking: boolean; level: HealthLeve
     return (
       <span className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
         <Circle className="h-2.5 w-2.5 fill-current text-amber-500" />
-        Degraded
+        {labels.degraded}
       </span>
     );
   }
@@ -183,12 +196,13 @@ function StatusBadge({ checking, level }: { checking: boolean; level: HealthLeve
   return (
     <span className="inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
       <Circle className="h-2.5 w-2.5 fill-current text-green-600" />
-      Operational
+      {labels.operational}
     </span>
   );
 }
 
 export function SystemHealth() {
+  const { t } = useTranslation();
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
   const [apiStatus, setApiStatus] = useState("");
@@ -212,7 +226,7 @@ export function SystemHealth() {
       setServices([]);
       setTimestamp(new Date().toISOString());
       setRequestLatencyMs(null);
-      setError(err instanceof Error ? err.message : "Failed to load system health.");
+      setError(err instanceof Error ? err.message : t("systemHealth.errors.load"));
     } finally {
       setChecking(false);
     }
@@ -229,25 +243,25 @@ export function SystemHealth() {
 
   const cards = [
     {
-      name: "Main API",
+      name: t("systemHealth.services.mainApi"),
       latencyMs: requestLatencyMs,
       reachable: mainApiReachable,
       lastChecked: timestamp,
     },
     {
-      name: "Database",
+      name: t("systemHealth.services.database"),
       latencyMs: latencyFromMessage(databaseService?.message ?? null, requestLatencyMs),
       reachable: databaseService ? databaseService.reachable : mainApiReachable,
       lastChecked: timestamp,
     },
     {
-      name: "OCR Service",
+      name: t("systemHealth.services.ocrService"),
       latencyMs: latencyFromMessage(ocrService?.message ?? null, requestLatencyMs),
       reachable: ocrService?.reachable ?? false,
       lastChecked: timestamp,
     },
     {
-      name: "AI Engine",
+      name: t("systemHealth.services.aiEngine"),
       latencyMs: latencyFromMessage(aiService?.message ?? null, requestLatencyMs),
       reachable: aiService?.reachable ?? false,
       lastChecked: timestamp,
@@ -258,9 +272,9 @@ export function SystemHealth() {
     <div className="max-w-[1200px] space-y-6 bg-gray-50">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold md:text-3xl">System Health</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">{t("systemHealth.title")}</h1>
           <p className="text-gray-600" style={{ fontSize: 14 }}>
-            Real-time status of critical platform services.
+            {t("systemHealth.subtitle")}
           </p>
         </div>
         <Button
@@ -269,7 +283,7 @@ export function SystemHealth() {
           className="bg-[#ED1C24] text-white hover:bg-[#c81820]"
         >
           <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} />
-          {checking ? "Checking..." : "Refresh"}
+          {checking ? t("systemHealth.checking") : t("common.actions.refresh")}
         </Button>
       </div>
 
@@ -286,18 +300,27 @@ export function SystemHealth() {
             <div key={service.name} className="rounded-lg border border-gray-200 bg-white p-4 md:p-6">
               <div className="mb-5 flex flex-col items-start gap-3 md:flex-row md:items-start md:justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
-                <StatusBadge checking={checking} level={level} />
+                <StatusBadge
+                  checking={checking}
+                  level={level}
+                  labels={{
+                    checking: t("systemHealth.checking"),
+                    critical: t("systemHealth.critical"),
+                    degraded: t("systemHealth.degraded"),
+                    operational: t("systemHealth.operational"),
+                  }}
+                />
               </div>
               <div className="space-y-3">
                 <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
-                  <span className="text-gray-500">Latency</span>
+                  <span className="text-gray-500">{t("systemHealth.latency")}</span>
                   <span className="font-semibold text-gray-900">
-                    {checking ? "Checking..." : service.latencyMs != null ? `${service.latencyMs}ms` : "—"}
+                    {checking ? t("systemHealth.checking") : service.latencyMs != null ? `${service.latencyMs}ms` : "—"}
                   </span>
                 </div>
                 <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
-                  <span className="text-gray-500">Last Checked</span>
-                  <span className="font-semibold text-gray-900">{formatRelativeTime(service.lastChecked)}</span>
+                  <span className="text-gray-500">{t("systemHealth.lastChecked")}</span>
+                  <span className="font-semibold text-gray-900">{formatRelativeTime(service.lastChecked, t)}</span>
                 </div>
               </div>
             </div>
@@ -309,6 +332,7 @@ export function SystemHealth() {
 }
 
 export function HRApprovals() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -321,7 +345,7 @@ export function HRApprovals() {
       const data = await adminApi.listPendingHr();
       setPending(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load pending HR users.");
+      setError(err instanceof Error ? err.message : t("admin.hrApprovals.errors.loadPending"));
     } finally {
       setLoading(false);
     }
@@ -338,7 +362,7 @@ export function HRApprovals() {
       await adminApi.approveHr(userId);
       setPending((prev) => prev.filter((user) => user.id !== userId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Approval failed.");
+      setError(err instanceof Error ? err.message : t("admin.hrApprovals.errors.approveFailed"));
     } finally {
       setBusyId(null);
     }
@@ -347,9 +371,9 @@ export function HRApprovals() {
   return (
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">HR Approvals</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t("admin.hrApprovals.title")}</h1>
         <p className="text-gray-600" style={{ fontSize: 14 }}>
-          Review and approve pending HR registrations.
+          {t("admin.hrApprovals.subtitle")}
         </p>
       </div>
 
@@ -362,7 +386,7 @@ export function HRApprovals() {
       <div className="grid grid-cols-1 gap-6">
         <Card className="p-4 border-[#ED1C24] border-2 md:p-6">
           <div className="mb-3 flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between">
-            <span className="text-gray-600" style={{ fontSize: 13 }}>Pending Approvals</span>
+            <span className="text-gray-600" style={{ fontSize: 13 }}>{t("admin.hrApprovals.pendingApprovals")}</span>
             <div className="w-9 h-9 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center">
               <UserCheck className="w-4 h-4" />
             </div>
@@ -372,15 +396,15 @@ export function HRApprovals() {
       </div>
 
       {loading ? (
-        <Card className="p-6 text-gray-500">Loading pending approvals...</Card>
+        <Card className="p-6 text-gray-500">{t("admin.hrApprovals.loading")}</Card>
       ) : pending.length === 0 ? (
         <Card className="p-6 text-center md:p-12">
           <div className="w-14 h-14 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-7 h-7" />
           </div>
-          <h3 style={{ fontSize: 18, fontWeight: 600 }}>All caught up</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 600 }}>{t("admin.hrApprovals.allCaughtUp")}</h3>
           <p className="text-gray-600 mt-1" style={{ fontSize: 14 }}>
-            There are no pending HR registrations to review.
+            {t("admin.hrApprovals.noPending")}
           </p>
         </Card>
       ) : (
@@ -401,7 +425,7 @@ export function HRApprovals() {
                   </div>
                   <div className="flex flex-col items-start gap-2 text-gray-600 sm:flex-row sm:items-center sm:gap-5" style={{ fontSize: 13 }}>
                     <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {user.email}</span>
-                    <span>Registered {formatDate(user.createdAt)}</span>
+                    <span>{t("admin.hrApprovals.registeredOn", { date: formatDate(user.createdAt) })}</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -410,7 +434,7 @@ export function HRApprovals() {
                     disabled={busyId === user.id}
                     className="bg-[#ED1C24] hover:bg-[#c81820] text-white"
                   >
-                    {busyId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Approve"}
+                    {busyId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("admin.hrApprovals.approve")}
                   </Button>
                 </div>
               </Card>

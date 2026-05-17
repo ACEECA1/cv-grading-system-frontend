@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../api";
@@ -10,6 +11,7 @@ function isValidEmail(value: string): boolean {
 }
 
 export function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("request");
   const [email, setEmail] = useState("");
@@ -27,19 +29,19 @@ export function ForgotPasswordPage() {
     setSuccess(false);
     const trimmedEmail = email.trim();
     if (!isValidEmail(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("forgotPassword.errors.invalidEmail"));
       return;
     }
 
     setBusy(true);
     setEmail(trimmedEmail);
     setStep("reset");
-    setInfo("Verification code sent!");
+    setInfo(t("forgotPassword.info.sent"));
     setBusy(false);
 
     void authApi.requestPasswordReset(trimmedEmail).catch((err) => {
       setInfo("");
-      setError(err instanceof Error ? err.message : "Failed to send reset code.");
+      setError(err instanceof Error ? err.message : t("forgotPassword.errors.sendCodeFailed"));
       setStep("request");
     });
   };
@@ -51,15 +53,15 @@ export function ForgotPasswordPage() {
     const trimmedEmail = email.trim();
     const trimmedCode = code.trim();
     if (!isValidEmail(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("forgotPassword.errors.invalidEmail"));
       return;
     }
     if (!trimmedCode) {
-      setError("Please enter the verification code.");
+      setError(t("forgotPassword.errors.codeRequired"));
       return;
     }
     if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
+      setError(t("forgotPassword.errors.minPassword"));
       return;
     }
 
@@ -68,7 +70,7 @@ export function ForgotPasswordPage() {
       await authApi.resetPassword(trimmedEmail, trimmedCode, newPassword);
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset password.");
+      setError(err instanceof Error ? err.message : t("forgotPassword.errors.resetFailed"));
     } finally {
       setBusy(false);
     }
@@ -79,9 +81,9 @@ export function ForgotPasswordPage() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-4 border border-gray-200 md:p-8">
         {step === "request" ? (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">Reset your password</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">{t("forgotPassword.requestTitle")}</h1>
             <p className="text-sm text-gray-600 mb-6">
-              Enter your email address and we will send you a verification code.
+              {t("forgotPassword.requestDescription")}
             </p>
 
             {info && <p className="text-sm text-green-600 mb-4">{info}</p>}
@@ -89,7 +91,7 @@ export function ForgotPasswordPage() {
 
             <div className="space-y-2 mb-5">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                {t("forgotPassword.emailAddress")}
               </label>
               <input
                 id="email"
@@ -108,7 +110,7 @@ export function ForgotPasswordPage() {
               disabled={busy}
               className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#ED1C24] hover:bg-[#c81820] text-white px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Code"}
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("forgotPassword.sendResetCode")}
             </button>
 
             <button
@@ -116,28 +118,28 @@ export function ForgotPasswordPage() {
               onClick={() => navigate("/login")}
               className="mt-4 text-sm text-gray-600 hover:text-gray-900"
             >
-              ← Back to Login
+              ← {t("auth.backToSignIn")}
             </button>
           </>
         ) : (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">Create new password</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2 md:text-2xl">{t("forgotPassword.resetTitle")}</h1>
             <p className="text-sm text-gray-600 mb-6">
-              Enter the verification code sent to your email and your new password.
+              {t("forgotPassword.resetDescription")}
             </p>
 
             {info && <p className="text-sm text-green-600 mb-4">{info}</p>}
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
             {success && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                Password reset successful.
+                {t("forgotPassword.success")}
               </div>
             )}
 
             <div className="space-y-4 mb-5">
               <div className="space-y-2">
                 <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
-                  Verification Code
+                  {t("forgotPassword.verificationCode")}
                 </label>
                 <input
                   id="otp"
@@ -151,7 +153,7 @@ export function ForgotPasswordPage() {
               </div>
               <div className="space-y-2">
                 <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
-                  New Password
+                  {t("forgotPassword.newPassword")}
                 </label>
                 <div className="relative w-full">
                   <input
@@ -167,7 +169,7 @@ export function ForgotPasswordPage() {
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
-                    aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                    aria-label={showNewPassword ? t("auth.a11y.hideNewPassword") : t("auth.a11y.showNewPassword")}
                     disabled={busy || success}
                   >
                     {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -183,7 +185,7 @@ export function ForgotPasswordPage() {
                 disabled={busy}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#ED1C24] hover:bg-[#c81820] text-white px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reset Password"}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("forgotPassword.resetPassword")}
               </button>
             ) : (
               <button
@@ -191,7 +193,7 @@ export function ForgotPasswordPage() {
                 onClick={() => navigate("/login")}
                 className="w-full inline-flex items-center justify-center rounded-md bg-[#ED1C24] hover:bg-[#c81820] text-white px-4 py-2 text-sm font-medium"
               >
-                Return to Login
+                {t("forgotPassword.returnToLogin")}
               </button>
             )}
           </>

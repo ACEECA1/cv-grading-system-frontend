@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, Loader2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -22,6 +23,7 @@ function normalizeFile(file: File | null): File | null {
 }
 
 export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [modalState, setModalState] = useState<ApplyModalState>("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -51,7 +53,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
     if (!jobId) return;
     const validFile = normalizeFile(file);
     if (!validFile) {
-      setApplicationError("Please upload a valid PDF file.");
+      setApplicationError(t("candidates.modal.errors.invalidPdf"));
       return;
     }
 
@@ -63,13 +65,17 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
       setModalState("success");
     } catch (err) {
       setModalState("upload");
-      setApplicationError(err instanceof Error ? err.message : "Application failed.");
+      setApplicationError(err instanceof Error ? err.message : t("candidates.modal.errors.applicationFailed"));
     }
   };
 
   if (!isOpen) return null;
 
-  const steps = ["Uploading Document", "Extracting text", "Evaluating skills"];
+  const steps = [
+    t("candidates.modal.processingSteps.upload"),
+    t("candidates.modal.processingSteps.extract"),
+    t("candidates.modal.processingSteps.evaluate"),
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center p-0 md:items-center md:p-4">
@@ -84,7 +90,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
 
         {modalState === "upload" && (
           <div className="space-y-5">
-            <h3 className="text-lg font-semibold text-gray-900">Apply for this job</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("candidates.modal.applyTitle")}</h3>
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -97,7 +103,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
                 const dropped = normalizeFile(e.dataTransfer.files?.[0] ?? null);
                 setFile(dropped);
                 if (!dropped) {
-                  setApplicationError("Only PDF files are allowed.");
+                  setApplicationError(t("candidates.modal.errors.onlyPdf"));
                 } else {
                   setApplicationError("");
                 }
@@ -106,10 +112,10 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
                 dragActive ? "border-[#ED1C24] bg-red-50" : "border-gray-300 bg-gray-50"
               }`}
             >
-              <p className="text-base font-semibold text-gray-900 mb-2">Upload your CV (PDF only)</p>
-              <p className="text-sm text-gray-600 mb-4">Drag and drop your file here, or browse from your device.</p>
+              <p className="text-base font-semibold text-gray-900 mb-2">{t("candidates.modal.uploadCv")}</p>
+              <p className="text-sm text-gray-600 mb-4">{t("candidates.modal.dragDropHint")}</p>
               <label className="inline-block bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-lg cursor-pointer text-sm font-medium">
-                Browse Files
+                {t("candidates.modal.browseFiles")}
                 <input
                   type="file"
                   accept=".pdf,application/pdf"
@@ -118,7 +124,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
                     const selected = normalizeFile(e.target.files?.[0] ?? null);
                     setFile(selected);
                     if (!selected) {
-                      setApplicationError("Only PDF files are allowed.");
+                      setApplicationError(t("candidates.modal.errors.onlyPdf"));
                     } else {
                       setApplicationError("");
                     }
@@ -127,7 +133,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
               </label>
               {file && (
                 <p className="mt-3 text-sm text-gray-700">
-                  Selected: <span className="font-medium">{file.name}</span>
+                  {t("candidates.modal.selectedFile", { name: file.name })}
                 </p>
               )}
             </div>
@@ -140,10 +146,10 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
 
             <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
               <Button variant="outline" onClick={onClose}>
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button onClick={() => void submitApplication()} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
-                Submit Application
+                {t("candidates.modal.submitApplication")}
               </Button>
             </div>
           </div>
@@ -151,7 +157,7 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
 
         {modalState === "processing" && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Analyzing CV with AI...</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("candidates.modal.analyzing")}</h3>
             <div className="space-y-4">
               {steps.map((step, index) => {
                 const isDone = index < activeStep;
@@ -184,15 +190,15 @@ export function ApplicationModal({ jobId, isOpen, onClose }: ApplicationModalPro
           <div className="space-y-5 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto" />
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Application Submitted Successfully!</h3>
-              <p className="text-sm text-gray-600 mt-1">Your CV was uploaded and sent for AI evaluation.</p>
+              <h3 className="text-xl font-semibold text-gray-900">{t("candidates.modal.successTitle")}</h3>
+              <p className="text-sm text-gray-600 mt-1">{t("candidates.modal.successSubtitle")}</p>
             </div>
             <div className="flex justify-center">
               <Button
                 onClick={() => navigate("/candidate/applications")}
                 className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white md:w-auto"
               >
-                Go to My Applications
+                {t("candidates.modal.goToApplications")}
               </Button>
             </div>
           </div>

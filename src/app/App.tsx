@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Activity,
   Briefcase,
@@ -65,23 +66,23 @@ const defaultPathByRole: Record<Role, string> = {
   candidate: "/candidate/jobs",
 };
 
-const navByRole: Record<Role, { to: string; label: string; icon: React.ReactNode }[]> = {
+const navByRole: Record<Role, { to: string; labelKey: string; icon: React.ReactNode }[]> = {
   admin: [
-    { to: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
-    { to: "/admin/approvals", label: "HR Approvals", icon: <UserCheck className="w-[18px] h-[18px]" /> },
-    { to: "/admin/jobs", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
-    { to: "/admin/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { to: "/admin/health", label: "System Health", icon: <Activity className="w-[18px] h-[18px]" /> },
+    { to: "/admin/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
+    { to: "/admin/approvals", labelKey: "nav.hrApprovals", icon: <UserCheck className="w-[18px] h-[18px]" /> },
+    { to: "/admin/jobs", labelKey: "nav.jobOffers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/admin/create-job", labelKey: "nav.createJob", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/admin/health", labelKey: "nav.systemHealth", icon: <Activity className="w-[18px] h-[18px]" /> },
   ],
   hr: [
-    { to: "/hr/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
-    { to: "/hr/jobs", label: "Job Offers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
-    { to: "/hr/create-job", label: "Create Job", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { to: "/hr/pipeline", label: "Candidate Pipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
+    { to: "/hr/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
+    { to: "/hr/jobs", labelKey: "nav.jobOffers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
+    { to: "/hr/create-job", labelKey: "nav.createJob", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/hr/pipeline", labelKey: "nav.candidatePipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
   ],
   candidate: [
-    { to: "/candidate/jobs", label: "Job Board", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { to: "/candidate/applications", label: "My Applications", icon: <FileText className="w-[18px] h-[18px]" /> },
+    { to: "/candidate/jobs", labelKey: "nav.jobBoard", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+    { to: "/candidate/applications", labelKey: "nav.myApplications", icon: <FileText className="w-[18px] h-[18px]" /> },
   ],
 };
 
@@ -111,15 +112,27 @@ function RoleLayout({
   session: Session;
   onLogout: () => void;
 }) {
+  const { t } = useTranslation();
+
   if (session.role !== role) {
     return <Navigate to={defaultPathByRole[session.role]} replace />;
   }
+
+  const translatedItems = React.useMemo(
+    () =>
+      navByRole[role].map((item) => ({
+        to: item.to,
+        label: t(item.labelKey),
+        icon: item.icon,
+      })),
+    [role, t],
+  );
 
   return (
     <SidebarShell
       role={role}
       fullName={session.name}
-      items={navByRole[role]}
+      items={translatedItems}
       onLogout={onLogout}
     >
       <Outlet />
@@ -181,74 +194,74 @@ export default function App() {
     }
   };
 
-  if (!session) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Navigate to="/auth/login" replace />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/*" element={<AuthPage onAuthenticated={handleAuthenticated} />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
-  }
-
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
-      <Route path="/login" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
-      <Route path="/forgot-password" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
-      <Route path="/auth/*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
-      <Route path="/settings" element={<RoleLayout role={session.role} session={session} onLogout={() => void handleLogout()} />}>
-        <Route index element={<SettingsPage />} />
-      </Route>
+    <div className="min-h-screen bg-white text-gray-900">
+      {!session ? (
+        <Routes>
+          <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/*" element={<AuthPage onAuthenticated={handleAuthenticated} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      ) : (
+        <Routes>
+          <Route path="/" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+          <Route path="/login" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+          <Route path="/forgot-password" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+          <Route path="/auth/*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+          <Route path="/settings" element={<RoleLayout role={session.role} session={session} onLogout={() => void handleLogout()} />}>
+            <Route index element={<SettingsPage />} />
+          </Route>
 
-      <Route path="/admin" element={<RoleLayout role="admin" session={session} onLogout={() => void handleLogout()} />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="approvals" element={<HRApprovals />} />
-        <Route path="health" element={<SystemHealth />} />
-        <Route path="create-job" element={<JobOfferCreate backTo="/admin/jobs" />} />
-        <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/admin/jobs/${job.id}`} />} />
-        <Route path="jobs/:jobId" element={<AdminJobOfferDetail />} />
-        <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/admin/submissions/jobs/${job.id}`} />} />
-        <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="admin" />} />
-        <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
-      </Route>
+          <Route path="/admin" element={<RoleLayout role="admin" session={session} onLogout={() => void handleLogout()} />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="approvals" element={<HRApprovals />} />
+            <Route path="health" element={<SystemHealth />} />
+            <Route path="create-job" element={<JobOfferCreate backTo="/admin/jobs" />} />
+            <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/admin/jobs/${job.id}`} />} />
+            <Route path="jobs/:jobId" element={<AdminJobOfferDetail />} />
+            <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/admin/submissions/jobs/${job.id}`} />} />
+            <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="admin" />} />
+            <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Route>
 
-      <Route path="/hr" element={<RoleLayout role="hr" session={session} onLogout={() => void handleLogout()} />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<HRDashboard createJobPath="/hr/create-job" />} />
-        <Route path="create-job" element={<JobOfferCreate backTo="/hr/dashboard" />} />
-        <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/hr/jobs/${job.id}`} />} />
-        <Route path="jobs/:jobId" element={<HrJobOfferDetail />} />
-        <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/hr/submissions/jobs/${job.id}`} />} />
-        <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="hr" />} />
-        <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
-        <Route
-          path="pipeline"
-          element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluation" />}
-        />
-        <Route
-          path="pipeline/evaluation/:evaluationId"
-          element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
-        />
-        <Route
-          path="pipeline/evaluations/:evaluationId"
-          element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
-        />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
-      </Route>
+          <Route path="/hr" element={<RoleLayout role="hr" session={session} onLogout={() => void handleLogout()} />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<HRDashboard createJobPath="/hr/create-job" />} />
+            <Route path="create-job" element={<JobOfferCreate backTo="/hr/dashboard" />} />
+            <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/hr/jobs/${job.id}`} />} />
+            <Route path="jobs/:jobId" element={<HrJobOfferDetail />} />
+            <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/hr/submissions/jobs/${job.id}`} />} />
+            <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="hr" />} />
+            <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
+            <Route
+              path="pipeline"
+              element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluation" />}
+            />
+            <Route
+              path="pipeline/evaluation/:evaluationId"
+              element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
+            />
+            <Route
+              path="pipeline/evaluations/:evaluationId"
+              element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
+            />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Route>
 
-      <Route path="/candidate" element={<RoleLayout role="candidate" session={session} onLogout={() => void handleLogout()} />}>
-        <Route index element={<Navigate to="jobs" replace />} />
-        <Route path="jobs" element={<JobBoard />} />
-        <Route path="jobs/:jobId" element={<CandidateJobDetail />} />
-        <Route path="applications" element={<MyApplications />} />
-        <Route path="*" element={<Navigate to="jobs" replace />} />
-      </Route>
+          <Route path="/candidate" element={<RoleLayout role="candidate" session={session} onLogout={() => void handleLogout()} />}>
+            <Route index element={<Navigate to="jobs" replace />} />
+            <Route path="jobs" element={<JobBoard />} />
+            <Route path="jobs/:jobId" element={<CandidateJobDetail />} />
+            <Route path="applications" element={<MyApplications />} />
+            <Route path="*" element={<Navigate to="jobs" replace />} />
+          </Route>
 
-      <Route path="*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
-    </Routes>
+          <Route path="*" element={<Navigate to={defaultPathByRole[session.role]} replace />} />
+        </Routes>
+      )}
+    </div>
   );
 }

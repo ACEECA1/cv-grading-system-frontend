@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -149,6 +150,13 @@ function statusClass(status: string | null | undefined): string {
   return "bg-gray-100 text-gray-700";
 }
 
+function localizeStatus(status: string | null | undefined, t: (key: string) => string): string {
+  if (!status) return "-";
+  const key = `common.status.${status.toLowerCase()}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
+}
+
 function ScoreRing({ score }: { score: number | null }) {
   const size = 132;
   const stroke = 10;
@@ -225,6 +233,7 @@ export function CandidateEvaluationDetail({
   cvId: initialCvId,
   uploadDate: initialUploadDate,
 }: CandidateEvaluationDetailProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const params = useParams<{ evaluationId?: string }>();
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
@@ -246,7 +255,7 @@ export function CandidateEvaluationDetail({
 
     const run = async () => {
       if (!resolvedEvaluationId) {
-        setError("Evaluation ID is missing.");
+        setError(t("evaluations.detail.errors.missingId"));
         setLoading(false);
         return;
       }
@@ -260,7 +269,7 @@ export function CandidateEvaluationDetail({
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load evaluation details.");
+          setError(err instanceof Error ? err.message : t("evaluations.detail.errors.load"));
         }
       } finally {
         if (!cancelled) {
@@ -281,7 +290,7 @@ export function CandidateEvaluationDetail({
   const status = evaluation?.status ?? "-";
   const resolvedCvId = evaluation?.cvId ?? initialCvId ?? "-";
   const resolvedUploadDate = evaluation?.cvUploadDate ?? initialUploadDate ?? null;
-  const summaryText = evaluation?.reasoning || evaluation?.recommendation || "-";
+  const summaryText = evaluation?.reasoning || evaluation?.recommendation || t("common.messages.noSummary");
   const technicalQuestions = evaluation?.technicalQuestions ?? [];
   const hrQuestions = evaluation?.hrQuestions ?? [];
   const alignmentRows = useMemo(() => {
@@ -298,7 +307,7 @@ export function CandidateEvaluationDetail({
     try {
       await hrApi.downloadEvaluationCv(resolvedEvaluationId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download CV.");
+      setError(err instanceof Error ? err.message : t("evaluations.detail.errors.downloadCv"));
     } finally {
       setDownloading(false);
     }
@@ -320,7 +329,7 @@ export function CandidateEvaluationDetail({
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
           type="button"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to pipeline
+          <ArrowLeft className="w-4 h-4" /> {t("common.actions.backToPipeline")}
         </button>
 
         {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>}
@@ -338,7 +347,7 @@ export function CandidateEvaluationDetail({
                   <div className="space-y-2 text-center sm:text-left">
                     <div className="flex items-center justify-center sm:justify-start gap-3">
                       <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{candidateName}</h1>
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${statusClass(status)}`}>{status}</span>
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${statusClass(status)}`}>{localizeStatus(status, t)}</span>
                     </div>
                     <p className="text-gray-600 text-sm flex items-center justify-center sm:justify-start gap-1.5">
                       <Briefcase className="w-4 h-4" /> {jobTitle}
@@ -351,7 +360,7 @@ export function CandidateEvaluationDetail({
                   className="w-full bg-[#ED1C24] hover:bg-[#c81820] text-white gap-2 md:w-auto"
                 >
                   {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Download CV
+                  {t("evaluations.detail.downloadCv")}
                 </Button>
               </div>
             </section>
@@ -365,7 +374,7 @@ export function CandidateEvaluationDetail({
                     activeTab === "overview" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
                 >
-                  Overview
+                  {t("evaluations.detail.tabs.overview")}
                 </button>
                 <button
                   type="button"
@@ -374,7 +383,7 @@ export function CandidateEvaluationDetail({
                     activeTab === "interview-guides" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
                 >
-                  Interview Guides
+                  {t("evaluations.detail.tabs.interviewGuides")}
                 </button>
                 <button
                   type="button"
@@ -383,7 +392,7 @@ export function CandidateEvaluationDetail({
                     activeTab === "parsed-profile" ? "text-gray-900 border-gray-900" : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
                 >
-                  Parsed Profile
+                  {t("evaluations.detail.tabs.parsedProfile")}
                 </button>
               </div>
 
@@ -392,7 +401,7 @@ export function CandidateEvaluationDetail({
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-1">
                       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Matched Skills</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.matchedSkills")}</h3>
                         {evaluation?.matchedSkills && evaluation.matchedSkills.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {evaluation.matchedSkills.map((skill) => (
@@ -402,12 +411,12 @@ export function CandidateEvaluationDetail({
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500">No skills data</p>
+                          <p className="text-sm text-gray-500">{t("candidates.applications.noSkillsData")}</p>
                         )}
                       </div>
 
                       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Missing Skills</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.missingSkills")}</h3>
                         {evaluation?.missingSkills && evaluation.missingSkills.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {evaluation.missingSkills.map((skill, index) => (
@@ -421,30 +430,30 @@ export function CandidateEvaluationDetail({
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500">No skills data</p>
+                          <p className="text-sm text-gray-500">{t("candidates.applications.noSkillsData")}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-6 lg:col-span-2">
                       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-3">AI Summary</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-3">{t("evaluations.detail.sections.aiSummary")}</h3>
                         <p className="text-sm text-gray-700 italic whitespace-pre-wrap">{summaryText}</p>
                       </div>
 
                       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Evaluation Metadata</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.evaluationMetadata")}</h3>
                         <div className="space-y-3 text-sm">
                           <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
-                            <span className="text-gray-500">Upload Date</span>
+                            <span className="text-gray-500">{t("evaluations.detail.sections.uploadDate")}</span>
                             <span className="font-medium text-gray-900">{resolvedUploadDate ? formatDate(resolvedUploadDate) : "-"}</span>
                           </div>
                           <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
-                            <span className="text-gray-500">CV ID</span>
+                            <span className="text-gray-500">{t("evaluations.detail.sections.cvId")}</span>
                             <span className="font-medium text-gray-900">{resolvedCvId}</span>
                           </div>
                           <div className="flex flex-col items-start justify-between gap-1 border-b border-gray-100 pb-2 md:flex-row md:items-center">
-                            <span className="text-gray-500">Evaluation ID</span>
+                            <span className="text-gray-500">{t("evaluations.detail.sections.evaluationId")}</span>
                             <span className="font-medium text-gray-900">{resolvedEvaluationId ?? "-"}</span>
                           </div>
                         </div>
@@ -453,14 +462,17 @@ export function CandidateEvaluationDetail({
 
                     <div className="lg:col-span-3">
                       <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Experience Alignment</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.experienceAlignment")}</h3>
                         {alignmentRows.length > 0 ? (
                           <div className="space-y-4">
                             {alignmentRows.map((alignment, index) => {
                               const rawMatch = alignment.matchPercentage;
                               const matchPercentage = rawMatch == null || Number.isNaN(rawMatch) ? null : Math.max(0, Math.min(rawMatch, 100));
-                              const description = `Required: ${alignment.yearsRequired ?? "-"} years | Candidate: ${alignment.yearsCandidate ?? "-"} years`;
-                              const label = `Experience Match ${index + 1}`;
+                              const description = t("evaluations.detail.experienceDescription", {
+                                required: alignment.yearsRequired ?? "-",
+                                candidate: alignment.yearsCandidate ?? "-",
+                              });
+                              const label = t("evaluations.detail.experienceMatchLabel", { index: index + 1 });
 
                               return (
                                 <div key={`${label}-${index}`} className="space-y-2">
@@ -482,7 +494,7 @@ export function CandidateEvaluationDetail({
                             })}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500">No alignment data</p>
+                          <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noAlignmentData")}</p>
                         )}
                       </div>
                     </div>
@@ -493,7 +505,7 @@ export function CandidateEvaluationDetail({
               {activeTab === "interview-guides" && (
                 <div className="p-4 sm:p-6 space-y-6">
                   <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">Technical Assessment</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.technicalAssessment")}</h3>
                     {technicalQuestions.length > 0 ? (
                       <div>
                         {technicalQuestions.map((item, index) => (
@@ -504,14 +516,14 @@ export function CandidateEvaluationDetail({
                           >
                             <div className="space-y-3">
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Expected Answer:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.expectedAnswer")}</p>
                                 <div className="rounded-md border border-gray-200 bg-white p-3 text-sm text-gray-700">
                                   {item.expectedAnswer || "-"}
                                 </div>
                               </div>
 
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Follow-up Questions:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.followUpQuestions")}</p>
                                 {item.followUpQuestions?.length > 0 ? (
                                   <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                                     {item.followUpQuestions.map((followUp, followUpIndex) => (
@@ -519,14 +531,14 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-sm text-gray-500">No follow-up questions.</p>
+                                  <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noFollowUpQuestions")}</p>
                                 )}
                               </div>
 
                               {item.bluffIndicator === true && (
                                 <div className="inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-700 text-xs font-semibold">
                                   <AlertTriangle className="w-4 h-4" />
-                                  Listen for Bluffing
+                                  {t("evaluations.detail.sections.listenForBluffing")}
                                 </div>
                               )}
                             </div>
@@ -534,24 +546,24 @@ export function CandidateEvaluationDetail({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No technical questions generated.</p>
+                      <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noTechnicalQuestions")}</p>
                     )}
                   </div>
 
                   <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-5">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">HR &amp; Behavioral Assessment</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.hrBehavioralAssessment")}</h3>
                     {hrQuestions.length > 0 ? (
                       <div>
                         {hrQuestions.map((item, index) => (
                           <QuestionAccordion key={`hr-${index}`} question={item.question}>
                             <div className="space-y-4">
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Psychological Intent:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.psychologicalIntent")}</p>
                                 <p className="text-sm italic text-gray-700">{item.psychologicalIntent || "-"}</p>
                               </div>
 
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Ideal Response Indicators:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.idealResponseIndicators")}</p>
                                 {item.idealResponseIndicators?.length > 0 ? (
                                   <div className="space-y-1.5">
                                     {item.idealResponseIndicators.map((entry, entryIndex) => (
@@ -562,12 +574,12 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-gray-500">No ideal response indicators.</p>
+                                  <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noIdealResponseIndicators")}</p>
                                 )}
                               </div>
 
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Red Flags:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.redFlags")}</p>
                                 {item.redFlags?.length > 0 ? (
                                   <div className="space-y-1.5">
                                     {item.redFlags.map((entry, entryIndex) => (
@@ -578,12 +590,12 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-gray-500">No red flags listed.</p>
+                                  <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noRedFlags")}</p>
                                 )}
                               </div>
 
                               <div>
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Follow-up Probes:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.followUpProbes")}</p>
                                 {item.followUpProbes?.length > 0 ? (
                                   <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                                     {item.followUpProbes.map((probe, probeIndex) => (
@@ -591,12 +603,12 @@ export function CandidateEvaluationDetail({
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-sm text-gray-500">No follow-up probes.</p>
+                                  <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noFollowUpProbes")}</p>
                                 )}
                               </div>
 
                               <div className="rounded-md border border-gray-200 bg-white p-3">
-                                <p className="text-sm font-semibold text-gray-900 mb-1">Evaluation Criteria:</p>
+                                <p className="text-sm font-semibold text-gray-900 mb-1">{t("evaluations.detail.sections.evaluationCriteria")}</p>
                                 <p className="text-sm text-gray-700">{item.evaluationCriteria || "-"}</p>
                               </div>
                             </div>
@@ -604,7 +616,7 @@ export function CandidateEvaluationDetail({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No HR questions generated.</p>
+                      <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noHrQuestions")}</p>
                     )}
                   </div>
                 </div>
@@ -614,38 +626,38 @@ export function CandidateEvaluationDetail({
                 <div className="p-4 sm:p-6">
                   {!profileData ? (
                     <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-                      <p className="text-sm text-gray-600">Parsed profile data is currently unavailable for this candidate.</p>
+                      <p className="text-sm text-gray-600">{t("evaluations.detail.sections.parsedUnavailable")}</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">Contact &amp; Info</h3>
+                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.contactInfo")}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-start gap-2 text-sm">
                             <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
                             <div>
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">Email</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">{t("common.labels.email")}</p>
                               <p className="text-gray-800">{valueOrDash(profileData?.personalInfo?.email)}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-2 text-sm">
                             <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
                             <div>
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">Phone</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">{t("common.labels.phone")}</p>
                               <p className="text-gray-800">{valueOrDash(profileData?.personalInfo?.phone)}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-2 text-sm">
                             <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                             <div>
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">Location</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">{t("common.labels.location")}</p>
                               <p className="text-gray-800">{valueOrDash(profileData?.personalInfo?.location)}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-2 text-sm">
                             <LinkIcon className="w-4 h-4 text-gray-400 mt-0.5" />
                             <div>
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">LinkedIn</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-0.5">{t("common.labels.linkedin")}</p>
                               {profileData?.personalInfo?.linkedin ? (
                                 <a
                                   href={profileData.personalInfo.linkedin}
@@ -665,7 +677,7 @@ export function CandidateEvaluationDetail({
 
                       {(profileData?.experience?.length ?? 0) > 0 && (
                         <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-                          <h3 className="text-base font-semibold text-gray-900 mb-4">Work Experience</h3>
+                          <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.workExperience")}</h3>
                           <div className="space-y-4">
                             {profileData?.experience?.map((item, index) => (
                               <div key={`exp-${index}`} className={`pb-4 ${index < (profileData.experience?.length ?? 0) - 1 ? "border-b border-gray-200" : ""}`}>
@@ -680,7 +692,7 @@ export function CandidateEvaluationDetail({
 
                       {(profileData?.education?.length ?? 0) > 0 && (
                         <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-                          <h3 className="text-base font-semibold text-gray-900 mb-4">Education</h3>
+                          <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.education")}</h3>
                           <div className="space-y-3">
                             {profileData?.education?.map((item, index) => (
                               <div key={`edu-${index}`} className="text-sm">
@@ -694,10 +706,10 @@ export function CandidateEvaluationDetail({
 
                       {((profileData?.skills?.length ?? 0) > 0 || (profileData?.languages?.length ?? 0) > 0) && (
                         <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-                          <h3 className="text-base font-semibold text-gray-900 mb-4">Skills &amp; Languages</h3>
+                          <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.skillsLanguages")}</h3>
                           {(profileData?.skills?.length ?? 0) > 0 && (
                             <div className="mb-4">
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Skills</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">{t("evaluations.detail.sections.skills")}</p>
                               <div className="flex flex-wrap gap-2">
                                 {profileData?.skills?.map((skill, index) => (
                                   <span key={`skill-${index}`} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs">
@@ -710,7 +722,7 @@ export function CandidateEvaluationDetail({
 
                           {(profileData?.languages?.length ?? 0) > 0 && (
                             <div>
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Languages</p>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">{t("evaluations.detail.sections.languages")}</p>
                               <div className="flex flex-wrap gap-2">
                                 {profileData?.languages?.map((language, index) => (
                                   <span key={`lang-${index}`} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs">

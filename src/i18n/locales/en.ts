@@ -475,6 +475,9 @@ const en = {
         interviewGuides: "Interview Guides",
         parsedProfile: "Parsed Profile",
       },
+      actions: {
+        linkedinSearch: "LinkedIn Search",
+      },
       downloadCv: "Download CV",
       scoreOutOfTen: "/10",
       sections: {

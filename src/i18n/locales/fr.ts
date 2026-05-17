@@ -475,6 +475,9 @@ const fr = {
         interviewGuides: "Guides d'entretien",
         parsedProfile: "Profil analysé",
       },
+      actions: {
+        linkedinSearch: "Recherche LinkedIn",
+      },
       downloadCv: "Télécharger le CV",
       scoreOutOfTen: "/10",
       sections: {

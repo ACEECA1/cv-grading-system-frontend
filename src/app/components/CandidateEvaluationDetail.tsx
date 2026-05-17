@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Download,
   Link as LinkIcon,
+  Linkedin,
   Loader2,
   Mail,
   MapPin,
@@ -300,6 +301,13 @@ export function CandidateEvaluationDetail({
   const profileData = useMemo(() => {
     return normalizeProfileData(evaluation?.profileData);
   }, [evaluation?.profileData]);
+  const linkedInHref = useMemo(() => {
+    const directLinkedin = profileData?.personalInfo?.linkedin?.trim();
+    if (directLinkedin) return directLinkedin;
+    const fullName = (evaluation?.candidateFullName ?? initialCandidateName ?? "").trim();
+    if (!fullName || fullName === "-") return null;
+    return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(fullName)}`;
+  }, [profileData?.personalInfo?.linkedin, evaluation?.candidateFullName, initialCandidateName]);
 
   const downloadCv = async () => {
     if (!resolvedEvaluationId) return;
@@ -348,6 +356,17 @@ export function CandidateEvaluationDetail({
                     <div className="flex items-center justify-center sm:justify-start gap-3">
                       <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{candidateName}</h1>
                       <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${statusClass(status)}`}>{localizeStatus(status, t)}</span>
+                      {linkedInHref && (
+                        <a
+                          href={linkedInHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#0A66C2] bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                        >
+                          <Linkedin className="h-4 w-4" />
+                          {t("evaluations.detail.actions.linkedinSearch")}
+                        </a>
+                      )}
                     </div>
                     <p className="text-gray-600 text-sm flex items-center justify-center sm:justify-start gap-1.5">
                       <Briefcase className="w-4 h-4" /> {jobTitle}

@@ -19,7 +19,7 @@ import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Briefcase, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Briefcase, FileText, Filter, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { formatDate, formatScoreOutOfTen, hrApi, loadStoredAuth, type JobOfferDTO } from "../api";
 import { toast } from "sonner";
 
@@ -406,113 +406,117 @@ function JobOfferFiltersCard({
   titleInput,
   locationInput,
   statusInput,
+  sortOption,
   isLoading,
   onTitleChange,
   onLocationChange,
   onStatusChange,
+  onSortOptionChange,
   onApply,
 }: {
   titleInput: string;
   locationInput: string;
   statusInput: JobStatusFilter;
+  sortOption: string;
   isLoading: boolean;
   onTitleChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onStatusChange: (value: JobStatusFilter) => void;
+  onSortOptionChange: (value: string) => void;
   onApply: () => void;
 }) {
   const { t } = useTranslation();
+  const [showFilters, setShowFilters] = useState(false);
+
   return (
     <Card className="p-4 md:p-6 space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="search-title">{t("jobOffers.list.filters.searchTitle")}</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              id="search-title"
-              className="pl-9"
-              value={titleInput}
-              onChange={(e) => onTitleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onApply();
-              }}
-              placeholder={t("jobOffers.list.filters.titlePlaceholder")}
-            />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="space-y-1.5 flex-1">
+            <Label htmlFor="search-title">{t("jobOffers.list.filters.searchTitle")}</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="search-title"
+                className="pl-9"
+                value={titleInput}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onApply();
+                }}
+                placeholder={t("jobOffers.list.filters.titlePlaceholder")}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 md:ml-auto md:self-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowFilters((prev) => !prev)}
+              className={showFilters ? "bg-gray-100" : ""}
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+            </Button>
+            <Button onClick={onApply} disabled={isLoading}>
+              {t("jobOffers.list.filters.apply")}
+            </Button>
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="search-location">{t("jobOffers.list.filters.searchLocation")}</Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              id="search-location"
-              className="pl-9"
-              value={locationInput}
-              onChange={(e) => onLocationChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onApply();
-              }}
-              placeholder={t("jobOffers.list.filters.locationPlaceholder")}
-            />
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="search-location">{t("jobOffers.list.filters.searchLocation")}</Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="search-location"
+                  className="pl-9"
+                  value={locationInput}
+                  onChange={(e) => onLocationChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onApply();
+                  }}
+                  placeholder={t("jobOffers.list.filters.locationPlaceholder")}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{t("jobOffers.list.filters.status")}</Label>
+              <Select value={statusInput} onValueChange={(value) => onStatusChange(value as JobStatusFilter)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("jobOffers.list.filters.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("jobOffers.list.filters.all")}</SelectItem>
+                  <SelectItem value="published">{t("jobOffers.list.filters.published")}</SelectItem>
+                  <SelectItem value="draft">{t("jobOffers.list.filters.draft")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{t("jobOffers.list.filters.sortBy")}</Label>
+              <Select value={sortOption} onValueChange={onSortOptionChange}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest-desc">{t("jobOffers.list.sortToolbar.options.newestDesc")}</SelectItem>
+                  <SelectItem value="newest-asc">{t("jobOffers.list.sortToolbar.options.oldestAsc")}</SelectItem>
+                  <SelectItem value="applicants-desc">{t("jobOffers.list.sortToolbar.options.mostApplicants")}</SelectItem>
+                  <SelectItem value="applicants-asc">{t("jobOffers.list.sortToolbar.options.leastApplicants")}</SelectItem>
+                  <SelectItem value="highestScore-desc">{t("jobOffers.list.sortToolbar.options.highestTopScore")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>{t("jobOffers.list.filters.status")}</Label>
-          <Select value={statusInput} onValueChange={(value) => onStatusChange(value as JobStatusFilter)}>
-            <SelectTrigger>
-              <SelectValue placeholder={t("jobOffers.list.filters.all")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("jobOffers.list.filters.all")}</SelectItem>
-              <SelectItem value="published">{t("jobOffers.list.filters.published")}</SelectItem>
-              <SelectItem value="draft">{t("jobOffers.list.filters.draft")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={onApply} disabled={isLoading}>
-          {t("jobOffers.list.filters.apply")}
-        </Button>
+        )}
       </div>
     </Card>
-  );
-}
-
-function JobOfferSortToolbar({
-  totalElements,
-  sortOption,
-  onSortOptionChange,
-}: {
-  totalElements: number;
-  sortOption: string;
-  onSortOptionChange: (value: string) => void;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
-      <p className="text-sm font-medium text-gray-700">{t("jobOffers.list.sortToolbar.totalOffers", { count: totalElements })}</p>
-      <div className="w-full max-w-[320px]">
-        <Select value={sortOption} onValueChange={onSortOptionChange}>
-          <SelectTrigger className="bg-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest-desc">{t("jobOffers.list.sortToolbar.options.newestDesc")}</SelectItem>
-            <SelectItem value="newest-asc">{t("jobOffers.list.sortToolbar.options.oldestAsc")}</SelectItem>
-            <SelectItem value="applicants-desc">{t("jobOffers.list.sortToolbar.options.mostApplicants")}</SelectItem>
-            <SelectItem value="applicants-asc">{t("jobOffers.list.sortToolbar.options.leastApplicants")}</SelectItem>
-            <SelectItem value="highestScore-desc">{t("jobOffers.list.sortToolbar.options.highestTopScore")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
   );
 }
 
@@ -682,18 +686,16 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         titleInput={titleInput}
         locationInput={locationInput}
         statusInput={statusInput}
+        sortOption={sortOption}
         isLoading={isLoading}
         onTitleChange={setTitleInput}
         onLocationChange={setLocationInput}
         onStatusChange={setStatusInput}
+        onSortOptionChange={handleSortOptionChange}
         onApply={handleApplyFilters}
       />
 
-      <JobOfferSortToolbar
-        totalElements={totalElements}
-        sortOption={sortOption}
-        onSortOptionChange={handleSortOptionChange}
-      />
+      <p className="text-sm font-medium text-gray-500 mb-4">{t("jobOffers.list.sortToolbar.totalOffers", { count: totalElements })}</p>
 
       {isLoading ? (
         <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.list.loading")}</Card>

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import {
@@ -283,7 +282,14 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
     }
   };
 
-  const sortOption = `${sortBy}-${sortDirection}`;
+  const handleSort = (column: "score" | "date" | "name" | "status") => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortDirection("desc");
+    }
+  };
   const showApplicantsLoadingOverlay = applicantsLoading && applicants.length > 0;
 
   if (loading) {
@@ -501,72 +507,72 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
             </div>
           ) : (
             <div className="p-4 md:p-6">
-              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg mb-4">
+              <div className="flex items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg mb-4">
                 <p className="text-sm font-medium text-gray-700">
                   {t("jobOffers.detail.applicants.totalApplicants", { count: applicants.length })}
                 </p>
-                <div className="w-full max-w-[320px]">
-                  <Select
-                    value={sortOption}
-                    onValueChange={(value) => {
-                      if (value === "score-desc") {
-                        setSortBy("score");
-                        setSortDirection("desc");
-                        return;
-                      }
-                      if (value === "score-asc") {
-                        setSortBy("score");
-                        setSortDirection("asc");
-                        return;
-                      }
-                      if (value === "date-desc") {
-                        setSortBy("date");
-                        setSortDirection("desc");
-                        return;
-                      }
-                      if (value === "date-asc") {
-                        setSortBy("date");
-                        setSortDirection("asc");
-                        return;
-                      }
-                      if (value === "name-asc") {
-                        setSortBy("name");
-                        setSortDirection("asc");
-                        return;
-                      }
-                      if (value === "name-desc") {
-                        setSortBy("name");
-                        setSortDirection("desc");
-                        return;
-                      }
-                      setSortBy("status");
-                      setSortDirection("desc");
-                    }}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="score-desc">{t("jobOffers.detail.applicants.sort.scoreDesc")}</SelectItem>
-                      <SelectItem value="score-asc">{t("jobOffers.detail.applicants.sort.scoreAsc")}</SelectItem>
-                      <SelectItem value="date-desc">{t("jobOffers.detail.applicants.sort.dateDesc")}</SelectItem>
-                      <SelectItem value="date-asc">{t("jobOffers.detail.applicants.sort.dateAsc")}</SelectItem>
-                      <SelectItem value="name-asc">{t("jobOffers.detail.applicants.sort.nameAsc")}</SelectItem>
-                      <SelectItem value="name-desc">{t("jobOffers.detail.applicants.sort.nameDesc")}</SelectItem>
-                      <SelectItem value="status-desc">{t("jobOffers.detail.applicants.sort.status")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               <div className="w-full overflow-x-auto rounded-lg border border-gray-200 relative">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("jobOffers.detail.applicants.candidateName")}</TableHead>
-                      <TableHead>{t("jobOffers.detail.applicants.matchScore")}</TableHead>
-                      <TableHead>{t("jobOffers.detail.applicants.status")}</TableHead>
-                      <TableHead>{t("jobOffers.detail.applicants.applicationDate")}</TableHead>
+                      <TableHead>
+                        <button
+                          type="button"
+                          onClick={() => handleSort("name")}
+                          className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded px-2 py-1 -ml-2 inline-flex items-center ${
+                            sortBy === "name" ? "text-blue-600 font-semibold" : ""
+                          }`}
+                        >
+                          {t("jobOffers.detail.applicants.candidateName")}
+                          {sortBy === "name" && (
+                            sortDirection === "desc" ? <ChevronDown className="w-4 h-4 ml-1 inline" /> : <ChevronUp className="w-4 h-4 ml-1 inline" />
+                          )}
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button
+                          type="button"
+                          onClick={() => handleSort("score")}
+                          className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded px-2 py-1 -ml-2 inline-flex items-center ${
+                            sortBy === "score" ? "text-blue-600 font-semibold" : ""
+                          }`}
+                        >
+                          {t("jobOffers.detail.applicants.matchScore")}
+                          {sortBy === "score" && (
+                            sortDirection === "desc" ? <ChevronDown className="w-4 h-4 ml-1 inline" /> : <ChevronUp className="w-4 h-4 ml-1 inline" />
+                          )}
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button
+                          type="button"
+                          onClick={() => handleSort("date")}
+                          className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded px-2 py-1 -ml-2 inline-flex items-center ${
+                            sortBy === "date" ? "text-blue-600 font-semibold" : ""
+                          }`}
+                        >
+                          {t("jobOffers.detail.applicants.applicationDate")}
+                          {sortBy === "date" && (
+                            sortDirection === "desc" ? <ChevronDown className="w-4 h-4 ml-1 inline" /> : <ChevronUp className="w-4 h-4 ml-1 inline" />
+                          )}
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button
+                          type="button"
+                          onClick={() => handleSort("status")}
+                          className={`hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer rounded px-2 py-1 -ml-2 inline-flex items-center ${
+                            sortBy === "status" ? "text-blue-600 font-semibold" : ""
+                          }`}
+                        >
+                          {t("jobOffers.detail.applicants.status")}
+                          {sortBy === "status" && (
+                            sortDirection === "desc" ? <ChevronDown className="w-4 h-4 ml-1 inline" /> : <ChevronUp className="w-4 h-4 ml-1 inline" />
+                          )}
+                        </button>
+                      </TableHead>
                       <TableHead className="text-right">{t("jobOffers.detail.applicants.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -590,12 +596,12 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                           <TableCell>
                             <MatchScoreRing score={applicant.matchScore} naLabel={t("common.messages.na")} />
                           </TableCell>
+                          <TableCell className="text-gray-600">{formatDate(applicant.applicationDate)}</TableCell>
                           <TableCell>
                             <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700" style={{ fontSize: 11, fontWeight: 600 }}>
                               {localizeStatus(applicant.status, t)}
                             </span>
                           </TableCell>
-                          <TableCell className="text-gray-600">{formatDate(applicant.applicationDate)}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="outline"

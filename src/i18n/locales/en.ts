@@ -33,6 +33,7 @@ const en = {
       refresh: "Refresh",
       backToJobBoard: "Back to Job Board",
       backToJobOffers: "Back to job offers",
+      backToJobOffer: "Back to Job Offer",
       backToPipeline: "Back to pipeline",
       backToLogin: "Back to sign in",
       loading: "Loading...",

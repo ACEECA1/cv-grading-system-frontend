@@ -8,7 +8,6 @@ import {
   FileText,
   LayoutDashboard,
   UserCheck,
-  UsersRound,
 } from "lucide-react";
 import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { AuthPage } from "./components/auth-page";
@@ -19,7 +18,7 @@ import { CandidateEvaluationDetail } from "./components/CandidateEvaluationDetai
 import { CandidateJobDetail } from "./components/CandidateJobDetail";
 import { JobBoard, MyApplications } from "./components/candidate-views";
 import { AdminJobOfferDetail, HrJobOfferDetail } from "./components/HrJobOfferDetail";
-import { CandidatePipeline, HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
+import { HRDashboard, JobOfferCreate, JobOffersList } from "./components/hr-views";
 import { SettingsPage } from "./components/SettingsPage";
 import { useDynamicTitle } from "./hooks/useDynamicTitle";
 import {
@@ -78,7 +77,6 @@ const navByRole: Record<Role, { to: string; labelKey: string; icon: React.ReactN
     { to: "/hr/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
     { to: "/hr/jobs", labelKey: "nav.jobOffers", icon: <Briefcase className="w-[18px] h-[18px]" /> },
     { to: "/hr/create-job", labelKey: "nav.createJob", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
-    { to: "/hr/pipeline", labelKey: "nav.candidatePipeline", icon: <UsersRound className="w-[18px] h-[18px]" /> },
   ],
   candidate: [
     { to: "/candidate/jobs", labelKey: "nav.jobBoard", icon: <ClipboardList className="w-[18px] h-[18px]" /> },
@@ -140,29 +138,13 @@ function RoleLayout({
   );
 }
 
-function SubmissionsPipelineRoute({ role }: { role: "admin" | "hr" }) {
-  const params = useParams<{ jobId: string }>();
-  const jobId = parseId(params.jobId);
-  if (jobId == null) {
-    return <Navigate to={`/${role}/submissions`} replace />;
-  }
-  const evaluationRoutePrefix = `/${role}/submissions/jobs/${jobId}/evaluations`;
-  return (
-    <CandidatePipeline
-      jobId={jobId}
-      backTo={`/${role}/submissions`}
-      evaluationRoutePrefix={evaluationRoutePrefix}
-    />
-  );
-}
-
 function SubmissionEvaluationRoute({ role }: { role: "admin" | "hr" }) {
   const params = useParams<{ jobId: string }>();
   const jobId = parseId(params.jobId);
   if (jobId == null) {
-    return <Navigate to={`/${role}/submissions`} replace />;
+    return <Navigate to={`/${role}/jobs`} replace />;
   }
-  return <CandidateEvaluationDetail backTo={`/${role}/submissions/jobs/${jobId}`} />;
+  return <CandidateEvaluationDetail backTo={`/${role}/jobs/${jobId}`} />;
 }
 
 export default function App() {
@@ -221,9 +203,7 @@ export default function App() {
             <Route path="create-job" element={<JobOfferCreate backTo="/admin/jobs" />} />
             <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/admin/jobs/${job.id}`} />} />
             <Route path="jobs/:jobId" element={<AdminJobOfferDetail />} />
-            <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/admin/submissions/jobs/${job.id}`} />} />
-            <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="admin" />} />
-            <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />
+            <Route path="jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="admin" />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
 
@@ -233,21 +213,7 @@ export default function App() {
             <Route path="create-job" element={<JobOfferCreate backTo="/hr/dashboard" />} />
             <Route path="jobs" element={<JobOffersList onSelectJobPath={(job) => `/hr/jobs/${job.id}`} />} />
             <Route path="jobs/:jobId" element={<HrJobOfferDetail />} />
-            <Route path="submissions" element={<JobOffersList onSelectJobPath={(job) => `/hr/submissions/jobs/${job.id}`} />} />
-            <Route path="submissions/jobs/:jobId" element={<SubmissionsPipelineRoute role="hr" />} />
-            <Route path="submissions/jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
-            <Route
-              path="pipeline"
-              element={<CandidatePipeline evaluationRoutePrefix="/hr/pipeline/evaluation" />}
-            />
-            <Route
-              path="pipeline/evaluation/:evaluationId"
-              element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
-            />
-            <Route
-              path="pipeline/evaluations/:evaluationId"
-              element={<CandidateEvaluationDetail backTo="/hr/pipeline" />}
-            />
+            <Route path="jobs/:jobId/evaluations/:evaluationId" element={<SubmissionEvaluationRoute role="hr" />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Route>
 

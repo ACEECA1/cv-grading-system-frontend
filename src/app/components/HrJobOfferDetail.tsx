@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
@@ -315,15 +315,17 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   return (
     <div className="bg-gray-50 p-4 md:p-6">
       <div className="max-w-[1200px] mx-auto space-y-6">
-        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 space-y-5 md:p-6">
+        <div className="w-full flex justify-start">
           <button
             type="button"
             onClick={() => navigate(jobsPath)}
-            className="text-sm text-gray-600 hover:text-gray-900"
+            className="text-sm font-medium text-gray-600 hover:text-[#ED1C24] transition-colors flex items-center gap-2"
           >
-            ← {t("common.actions.backToJobOffers")}
+            <ArrowLeft className="w-4 h-4" /> {t("common.actions.backToJobOffers")}
           </button>
+        </div>
 
+        <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 space-y-5 md:p-6">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2">
               <h1 className="text-2xl font-bold md:text-3xl">{job.title}</h1>
@@ -611,10 +613,10 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                               onClick={() => {
                                 if (!applicant.evaluationId) return;
                                 if (role === "ADMIN") {
-                                  navigate(`/admin/submissions/jobs/${jobId}/evaluations/${applicant.evaluationId}`);
+                                  navigate(`/admin/jobs/${jobId}/evaluations/${applicant.evaluationId}`);
                                   return;
                                 }
-                                navigate(`/hr/pipeline/evaluation/${applicant.evaluationId}`);
+                                navigate(`/hr/jobs/${jobId}/evaluations/${applicant.evaluationId}`);
                               }}
                             >
                               {t("jobOffers.detail.applicants.viewEvaluation")}

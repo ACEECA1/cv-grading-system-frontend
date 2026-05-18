@@ -33,6 +33,7 @@ const fr = {
       refresh: "Actualiser",
       backToJobBoard: "Retour aux offres",
       backToJobOffers: "Retour aux offres d'emploi",
+      backToJobOffer: "Retour à l'offre d'emploi",
       backToPipeline: "Retour au pipeline",
       backToLogin: "Retour à la connexion",
       loading: "Chargement...",

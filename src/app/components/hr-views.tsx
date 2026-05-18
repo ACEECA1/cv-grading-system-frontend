@@ -19,9 +19,8 @@ import { Textarea } from "./ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { ArrowLeft, Briefcase, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
-import { MatchRing } from "./match-ring";
-import { formatDate, formatScoreOutOfTen, hrApi, loadStoredAuth, type HrEvaluationSummaryDTO, type JobOfferDTO, type PageResponse } from "../api";
+import { Briefcase, FileText, Loader2, MapPin, Search, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { formatDate, formatScoreOutOfTen, hrApi, loadStoredAuth, type JobOfferDTO } from "../api";
 import { toast } from "sonner";
 
 function statusClass(status: string): string {
@@ -58,16 +57,6 @@ export interface JobOffer {
   createdAt: string;
 }
 
-export interface Candidate {
-  evaluationId: number;
-  status: HrEvaluationSummaryDTO["status"];
-  overallScore: number | null;
-  candidateName: string;
-  jobTitle: string;
-  cvUploadDate: string | null;
-  cvId: number | null;
-}
-
 function mapJobOffer(value: JobOfferDTO): JobOffer {
   return {
     id: value.id,
@@ -75,18 +64,6 @@ function mapJobOffer(value: JobOfferDTO): JobOffer {
     status: value.status,
     location: value.structuredJd?.workLocation || "",
     createdAt: value.createdAt,
-  };
-}
-
-function mapCandidate(value: HrEvaluationSummaryDTO): Candidate {
-  return {
-    evaluationId: value.evaluationId,
-    status: value.status,
-    overallScore: value.overallScore,
-    candidateName: value.candidateFullName || "",
-    jobTitle: value.jobOfferTitle || "",
-    cvUploadDate: value.cvUploadDate,
-    cvId: value.cvId,
   };
 }
 
@@ -763,190 +740,6 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
           void handleDeleteConfirm();
         }}
       />
-    </div>
-  );
-}
-
-export function CandidatePipeline({
-  jobId,
-  evaluationRoutePrefix,
-  backTo,
-}: {
-  jobId?: number;
-  evaluationRoutePrefix: string;
-  backTo?: string;
-}) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [minScore, setMinScore] = useState("");
-  const [sortBy, setSortBy] = useState<"score" | "date">("score");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [evaluations, setEvaluations] = useState<PageResponse<HrEvaluationSummaryDTO> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const minScoreNumber = minScore.trim() ? Number(minScore) : undefined;
-        const data = await hrApi.listEvaluations({
-          page: page - 1,
-          size: 10,
-          jobId,
-          minScore: Number.isFinite(minScoreNumber) ? minScoreNumber : undefined,
-          sortBy,
-          direction: sortDirection,
-        });
-        if (!cancelled) setEvaluations(data);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : t("jobOffers.pipeline.errors.load"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [jobId, minScore, page, sortBy, sortDirection]);
-
-  const rows = useMemo(() => (evaluations?.content ?? []).map(mapCandidate), [evaluations]);
-  const totalPages = Math.max(1, evaluations?.totalPages ?? 1);
-  const totalCandidates = evaluations?.totalElements ?? rows.length;
-  const sortOption = `${sortBy}-${sortDirection}`;
-  const isInitialLoading = loading && evaluations === null;
-  const showLoadingOverlay = loading && evaluations !== null;
-  const title = jobId ? t("jobOffers.pipeline.titleWithId", { id: jobId }) : t("jobOffers.pipeline.title");
-
-  return (
-    <div className="space-y-6 max-w-[1200px]">
-      {backTo && (
-        <button onClick={() => navigate(backTo)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" style={{ fontSize: 13 }}>
-          <ArrowLeft className="w-4 h-4" /> {t("jobOffers.pipeline.backToJobOffers")}
-        </button>
-      )}
-      <div>
-        <h1 className="text-2xl font-bold md:text-3xl">{title}</h1>
-        <p className="text-gray-600" style={{ fontSize: 14 }}>
-          {t("jobOffers.pipeline.subtitle")}
-        </p>
-      </div>
-
-      <div className="w-full md:max-w-[220px]">
-        <Label>{t("common.labels.minimumScore")}</Label>
-        <Input value={minScore} onChange={(e) => setMinScore(e.target.value)} placeholder="e.g. 7.5" />
-      </div>
-
-      {error && (
-        <Card className="p-4 border-red-200 bg-red-50 text-red-700" style={{ fontSize: 13 }}>
-          {error}
-        </Card>
-      )}
-
-      <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg mb-4">
-        <p className="text-sm font-medium text-gray-700">
-          {t("jobOffers.pipeline.candidatesApplied", { count: totalCandidates })}
-        </p>
-        <div className="w-full max-w-[280px]">
-          <Select
-            value={sortOption}
-            onValueChange={(value) => {
-              if (value === "score-desc") {
-                setSortBy("score");
-                setSortDirection("desc");
-                return;
-              }
-              if (value === "score-asc") {
-                setSortBy("score");
-                setSortDirection("asc");
-                return;
-              }
-              if (value === "date-desc") {
-                setSortBy("date");
-                setSortDirection("desc");
-                return;
-              }
-              setSortBy("date");
-              setSortDirection("asc");
-            }}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score-desc">{t("jobOffers.pipeline.sort.scoreDesc")}</SelectItem>
-              <SelectItem value="score-asc">{t("jobOffers.pipeline.sort.scoreAsc")}</SelectItem>
-              <SelectItem value="date-desc">{t("jobOffers.pipeline.sort.dateDesc")}</SelectItem>
-              <SelectItem value="date-asc">{t("jobOffers.pipeline.sort.dateAsc")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Card className="overflow-hidden relative">
-        {isInitialLoading ? (
-          <div className="p-6 text-gray-500">{t("jobOffers.pipeline.loading")}</div>
-        ) : rows.length === 0 ? (
-          <div className="p-6 text-gray-500">{t("jobOffers.pipeline.noEvaluations")}</div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("jobOffers.pipeline.table.candidate")}</TableHead>
-                <TableHead>{t("jobOffers.pipeline.table.job")}</TableHead>
-                <TableHead>{t("jobOffers.pipeline.table.uploaded")}</TableHead>
-                <TableHead>{t("jobOffers.pipeline.table.score")}</TableHead>
-                <TableHead>{t("jobOffers.pipeline.table.status")}</TableHead>
-                <TableHead className="text-right">{t("jobOffers.pipeline.table.action")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((candidate) => (
-                <TableRow key={candidate.evaluationId}>
-                  <TableCell style={{ fontWeight: 500 }}>{candidate.candidateName || t("common.messages.unknown")}</TableCell>
-                  <TableCell className="text-gray-600">{candidate.jobTitle || t("common.messages.unknown")}</TableCell>
-                  <TableCell className="text-gray-600">{formatDate(candidate.cvUploadDate)}</TableCell>
-                  <TableCell>
-                    {candidate.overallScore == null ? (
-                      <span className="text-gray-500 text-sm">{t("jobOffers.pipeline.noScore")}</span>
-                    ) : (
-                      <MatchRing score={candidate.overallScore} size={48} />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-0.5 rounded ${statusClass(candidate.status)}`} style={{ fontSize: 11, fontWeight: 600 }}>
-                      {localizeStatus(candidate.status, t)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => navigate(`${evaluationRoutePrefix}/${candidate.evaluationId}`)}>
-                      {t("jobOffers.pipeline.view")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-        {showLoadingOverlay && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
-          </div>
-        )}
-      </Card>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
-          {t("common.actions.previous")}
-        </Button>
-        <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>
-          {t("common.actions.next")}
-        </Button>
-      </div>
     </div>
   );
 }

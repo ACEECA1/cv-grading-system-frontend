@@ -17,20 +17,13 @@ const routeTitles: Array<{ pattern: string; title: string }> = [
   { pattern: "/admin/create-job", title: "Create Job" },
   { pattern: "/admin/jobs", title: "Job Offers" },
   { pattern: "/admin/jobs/:jobId", title: "Job Offer Detail" },
-  { pattern: "/admin/submissions", title: "Submissions" },
-  { pattern: "/admin/submissions/jobs/:jobId", title: "Candidate Pipeline" },
-  { pattern: "/admin/submissions/jobs/:jobId/evaluations/:evaluationId", title: "Evaluation Detail" },
+  { pattern: "/admin/jobs/:jobId/evaluations/:evaluationId", title: "Evaluation Detail" },
 
   { pattern: "/hr/dashboard", title: "HR Dashboard" },
   { pattern: "/hr/create-job", title: "Create Job" },
   { pattern: "/hr/jobs", title: "Job Offers" },
   { pattern: "/hr/jobs/:jobId", title: "Job Offer Detail" },
-  { pattern: "/hr/submissions", title: "Submissions" },
-  { pattern: "/hr/submissions/jobs/:jobId", title: "Candidate Pipeline" },
-  { pattern: "/hr/submissions/jobs/:jobId/evaluations/:evaluationId", title: "Evaluation Detail" },
-  { pattern: "/hr/pipeline", title: "Candidate Pipeline" },
-  { pattern: "/hr/pipeline/evaluation/:evaluationId", title: "Evaluation Detail" },
-  { pattern: "/hr/pipeline/evaluations/:evaluationId", title: "Evaluation Detail" },
+  { pattern: "/hr/jobs/:jobId/evaluations/:evaluationId", title: "Evaluation Detail" },
 
   { pattern: "/candidate/jobs", title: "Job Board" },
   { pattern: "/candidate/jobs/:jobId", title: "Job Detail" },
@@ -54,4 +47,3 @@ export function useDynamicTitle() {
     document.title = pageTitle === TITLE_SUFFIX ? TITLE_SUFFIX : `${pageTitle} - ${TITLE_SUFFIX}`;
   }, [pageTitle]);
 }
-

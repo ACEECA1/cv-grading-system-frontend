@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -237,7 +237,8 @@ export function CandidateEvaluationDetail({
 }: CandidateEvaluationDetailProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const params = useParams<{ evaluationId?: string }>();
+  const location = useLocation();
+  const params = useParams<{ evaluationId?: string; jobId?: string }>();
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [evaluation, setEvaluation] = useState<HrEvaluationDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -251,6 +252,15 @@ export function CandidateEvaluationDetail({
     const parsed = Number(source);
     return Number.isFinite(parsed) ? parsed : null;
   }, [params.evaluationId, evaluationId]);
+  const routeJobId = useMemo(() => {
+    const parsed = Number(params.jobId);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [params.jobId]);
+  const rolePrefix = useMemo(() => {
+    if (location.pathname.startsWith("/admin/")) return "/admin";
+    if (location.pathname.startsWith("/hr/")) return "/hr";
+    return null;
+  }, [location.pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -323,19 +333,26 @@ export function CandidateEvaluationDetail({
       navigate(backTo);
       return;
     }
+    const resolvedJobOfferId = evaluation?.jobOfferId ?? routeJobId;
+    if (resolvedJobOfferId != null && rolePrefix) {
+      navigate(`${rolePrefix}/jobs/${resolvedJobOfferId}`);
+      return;
+    }
     navigate(-1);
   };
 
   return (
     <div className="bg-gray-50 min-h-full p-4 md:p-6">
       <div className="max-w-[1200px] mx-auto space-y-6">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
-          type="button"
-        >
-          <ArrowLeft className="w-4 h-4" /> {t("common.actions.backToPipeline")}
-        </button>
+        <div className="w-full flex justify-start mb-6">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+            type="button"
+          >
+            <ArrowLeft className="w-4 h-4" /> {t("common.actions.backToJobOffer")}
+          </button>
+        </div>
 
         {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>}
 

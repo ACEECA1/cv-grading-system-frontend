@@ -291,6 +291,16 @@ const fr = {
       noOffers: "Aucune offre trouvée.",
       clickToSeeEvaluations: "Cliquez pour voir les évaluations",
       createdOn: "Créée le {{date}}",
+      sortToolbar: {
+        totalOffers: "{{count}} offres au total",
+        options: {
+          newestDesc: "Offres les plus récentes",
+          oldestAsc: "Offres les plus anciennes",
+          mostApplicants: "Le plus de candidats",
+          leastApplicants: "Le moins de candidats",
+          highestTopScore: "Meilleur score maximal",
+        },
+      },
       filters: {
         searchTitle: "Rechercher un titre",
         searchLocation: "Rechercher un lieu",

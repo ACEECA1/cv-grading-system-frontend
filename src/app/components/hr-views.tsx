@@ -263,13 +263,14 @@ export function JobOfferCreate({ backTo }: { backTo: string }) {
 }
 
 type JobStatusFilter = "all" | "published" | "draft";
-type JobSortBy = "createdAt" | "title";
-type JobSortDir = "asc" | "desc";
+type JobSortBy = "newest" | "applicants" | "highestScore";
+type JobSortDirection = "asc" | "desc";
 
 interface UseJobOfferManagementResult {
   page: number;
   size: number;
   isLoading: boolean;
+  isFetching: boolean;
   errorMessage: string;
   jobs: JobOffer[];
   totalElements: number;
@@ -278,7 +279,7 @@ interface UseJobOfferManagementResult {
   locationInput: string;
   statusInput: JobStatusFilter;
   sortBy: JobSortBy;
-  sortDir: JobSortDir;
+  sortDirection: JobSortDirection;
   hasDeletePermission: boolean;
   jobToDelete: number | null;
   isDeleting: boolean;
@@ -288,7 +289,7 @@ interface UseJobOfferManagementResult {
   setLocationInput: React.Dispatch<React.SetStateAction<string>>;
   setStatusInput: React.Dispatch<React.SetStateAction<JobStatusFilter>>;
   setSortBy: React.Dispatch<React.SetStateAction<JobSortBy>>;
-  setSortDir: React.Dispatch<React.SetStateAction<JobSortDir>>;
+  setSortDirection: React.Dispatch<React.SetStateAction<JobSortDirection>>;
   setJobToDelete: React.Dispatch<React.SetStateAction<number | null>>;
   handleApplyFilters: () => void;
   handleDeleteConfirm: () => Promise<void>;
@@ -298,6 +299,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [jobOffers, setJobOffers] = useState<JobOfferDTO[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -313,8 +315,9 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
   const [appliedLocation, setAppliedLocation] = useState("");
   const [appliedStatus, setAppliedStatus] = useState<JobStatusFilter>("all");
 
-  const [sortBy, setSortBy] = useState<JobSortBy>("createdAt");
-  const [sortDir, setSortDir] = useState<JobSortDir>("desc");
+  const [sortBy, setSortBy] = useState<JobSortBy>("newest");
+  const [sortDirection, setSortDirection] = useState<JobSortDirection>("desc");
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const hasDeletePermission = useMemo(() => loadStoredAuth()?.user.role === "ADMIN", []);
 
@@ -329,7 +332,11 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
     let isCancelled = false;
 
     const fetchJobOffers = async () => {
-      setIsLoading(true);
+      if (hasLoadedOnce) {
+        setIsFetching(true);
+      } else {
+        setIsLoading(true);
+      }
       setErrorMessage("");
       try {
         const isPublished = appliedStatus === "all" ? undefined : appliedStatus === "published";
@@ -340,7 +347,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
           location: appliedLocation || undefined,
           isPublished,
           sortBy,
-          sortDir,
+          direction: sortDirection,
         });
 
         if (!isCancelled) {
@@ -355,6 +362,8 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
       } finally {
         if (!isCancelled) {
           setIsLoading(false);
+          setIsFetching(false);
+          setHasLoadedOnce(true);
         }
       }
     };
@@ -363,7 +372,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
     return () => {
       isCancelled = true;
     };
-  }, [appliedLocation, appliedStatus, appliedTitle, page, size, sortBy, sortDir]);
+  }, [appliedLocation, appliedStatus, appliedTitle, page, size, sortBy, sortDirection]);
 
   const safeTotalPages = Math.max(1, totalPages);
   const jobs = useMemo(() => jobOffers.map(mapJobOffer), [jobOffers]);
@@ -390,6 +399,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
     page,
     size,
     isLoading,
+    isFetching,
     errorMessage,
     jobs,
     totalElements,
@@ -398,7 +408,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
     locationInput,
     statusInput,
     sortBy,
-    sortDir,
+    sortDirection,
     hasDeletePermission,
     jobToDelete,
     isDeleting,
@@ -408,7 +418,7 @@ function useJobOfferManagement(t: (key: string, options?: Record<string, unknown
     setLocationInput,
     setStatusInput,
     setSortBy,
-    setSortDir,
+    setSortDirection,
     setJobToDelete,
     handleApplyFilters,
     handleDeleteConfirm,
@@ -419,33 +429,25 @@ function JobOfferFiltersCard({
   titleInput,
   locationInput,
   statusInput,
-  sortBy,
-  sortDir,
   isLoading,
   onTitleChange,
   onLocationChange,
   onStatusChange,
-  onSortByChange,
-  onSortDirChange,
   onApply,
 }: {
   titleInput: string;
   locationInput: string;
   statusInput: JobStatusFilter;
-  sortBy: JobSortBy;
-  sortDir: JobSortDir;
   isLoading: boolean;
   onTitleChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onStatusChange: (value: JobStatusFilter) => void;
-  onSortByChange: (value: JobSortBy) => void;
-  onSortDirChange: (value: JobSortDir) => void;
   onApply: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <Card className="p-4 md:p-6 space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="search-title">{t("jobOffers.list.filters.searchTitle")}</Label>
           <div className="relative">
@@ -494,29 +496,6 @@ function JobOfferFiltersCard({
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>{t("jobOffers.list.filters.sortBy")}</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={sortBy} onValueChange={(value) => onSortByChange(value as JobSortBy)}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("jobOffers.list.filters.dateCreated")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt">{t("jobOffers.list.filters.dateCreated")}</SelectItem>
-                <SelectItem value="title">{t("common.labels.title")}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortDir} onValueChange={(value) => onSortDirChange(value as JobSortDir)}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("jobOffers.list.filters.desc")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">{t("jobOffers.list.filters.desc")}</SelectItem>
-                <SelectItem value="asc">{t("jobOffers.list.filters.asc")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </div>
 
       <div className="flex justify-end">
@@ -525,6 +504,38 @@ function JobOfferFiltersCard({
         </Button>
       </div>
     </Card>
+  );
+}
+
+function JobOfferSortToolbar({
+  totalElements,
+  sortOption,
+  onSortOptionChange,
+}: {
+  totalElements: number;
+  sortOption: string;
+  onSortOptionChange: (value: string) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
+      <p className="text-sm font-medium text-gray-700">{t("jobOffers.list.sortToolbar.totalOffers", { count: totalElements })}</p>
+      <div className="w-full max-w-[320px]">
+        <Select value={sortOption} onValueChange={onSortOptionChange}>
+          <SelectTrigger className="bg-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest-desc">{t("jobOffers.list.sortToolbar.options.newestDesc")}</SelectItem>
+            <SelectItem value="newest-asc">{t("jobOffers.list.sortToolbar.options.oldestAsc")}</SelectItem>
+            <SelectItem value="applicants-desc">{t("jobOffers.list.sortToolbar.options.mostApplicants")}</SelectItem>
+            <SelectItem value="applicants-asc">{t("jobOffers.list.sortToolbar.options.leastApplicants")}</SelectItem>
+            <SelectItem value="highestScore-desc">{t("jobOffers.list.sortToolbar.options.highestTopScore")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 }
 
@@ -635,6 +646,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     page,
     size,
     isLoading,
+    isFetching,
     errorMessage,
     jobs,
     totalElements,
@@ -643,7 +655,7 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     locationInput,
     statusInput,
     sortBy,
-    sortDir,
+    sortDirection,
     hasDeletePermission,
     jobToDelete,
     isDeleting,
@@ -653,11 +665,26 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
     setLocationInput,
     setStatusInput,
     setSortBy,
-    setSortDir,
+    setSortDirection,
     setJobToDelete,
     handleApplyFilters,
     handleDeleteConfirm,
   } = useJobOfferManagement(t);
+
+  const sortOption = `${sortBy}-${sortDirection}`;
+
+  const handleSortOptionChange = (value: string) => {
+    const [nextSortBy, nextSortDirection] = value.split("-");
+    if (nextSortBy !== "newest" && nextSortBy !== "applicants" && nextSortBy !== "highestScore") {
+      return;
+    }
+    if (nextSortDirection !== "asc" && nextSortDirection !== "desc") {
+      return;
+    }
+    setSortBy(nextSortBy);
+    setSortDirection(nextSortDirection);
+    setPage(0);
+  };
 
   return (
     <div className="space-y-6 max-w-[1200px]">
@@ -678,32 +705,35 @@ export function JobOffersList({ onSelectJobPath }: { onSelectJobPath: (job: JobO
         titleInput={titleInput}
         locationInput={locationInput}
         statusInput={statusInput}
-        sortBy={sortBy}
-        sortDir={sortDir}
         isLoading={isLoading}
         onTitleChange={setTitleInput}
         onLocationChange={setLocationInput}
         onStatusChange={setStatusInput}
-        onSortByChange={(value) => {
-          setSortBy(value);
-          setPage(0);
-        }}
-        onSortDirChange={(value) => {
-          setSortDir(value);
-          setPage(0);
-        }}
         onApply={handleApplyFilters}
+      />
+
+      <JobOfferSortToolbar
+        totalElements={totalElements}
+        sortOption={sortOption}
+        onSortOptionChange={handleSortOptionChange}
       />
 
       {isLoading ? (
         <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.list.loading")}</Card>
       ) : jobs.length ? (
-        <JobOfferGrid
-          jobs={jobs}
-          hasDeletePermission={hasDeletePermission}
-          onSelect={(job) => navigate(onSelectJobPath(job))}
-          onRequestDelete={setJobToDelete}
-        />
+        <div className="relative">
+          <JobOfferGrid
+            jobs={jobs}
+            hasDeletePermission={hasDeletePermission}
+            onSelect={(job) => navigate(onSelectJobPath(job))}
+            onRequestDelete={setJobToDelete}
+          />
+          {isFetching && (
+            <div className="absolute inset-0 bg-white/65 backdrop-blur-[1px] flex items-center justify-center rounded-lg">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+            </div>
+          )}
+        </div>
       ) : (
         <Card className="p-4 text-center text-gray-500 md:p-8">{t("jobOffers.list.noOffers")}</Card>
       )}

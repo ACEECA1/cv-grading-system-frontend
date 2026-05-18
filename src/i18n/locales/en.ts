@@ -291,6 +291,16 @@ const en = {
       noOffers: "No job offers found.",
       clickToSeeEvaluations: "Click to see evaluations",
       createdOn: "Created {{date}}",
+      sortToolbar: {
+        totalOffers: "{{count}} total offers",
+        options: {
+          newestDesc: "Newest Job Offers",
+          oldestAsc: "Oldest Job Offers",
+          mostApplicants: "Most Applicants",
+          leastApplicants: "Least Applicants",
+          highestTopScore: "Highest Top Score",
+        },
+      },
       filters: {
         searchTitle: "Search Title",
         searchLocation: "Search Location",

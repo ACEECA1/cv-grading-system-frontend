@@ -602,8 +602,8 @@ export const hrApi = {
     title?: string;
     location?: string;
     isPublished?: boolean;
-    sortBy?: string;
-    sortDir?: "asc" | "desc";
+    sortBy?: "newest" | "applicants" | "highestScore";
+    direction?: "asc" | "desc";
   }) =>
     requestJson<NestedPageResponse<JobOfferDTO>>(
       `/api/hr/job-offers${buildQuery({
@@ -613,7 +613,7 @@ export const hrApi = {
         location: params.location,
         isPublished: params.isPublished,
         sortBy: params.sortBy,
-        sortDir: params.sortDir,
+        direction: params.direction,
       })}`,
     ),
   deleteJobOffer: (jobOfferId: number) =>

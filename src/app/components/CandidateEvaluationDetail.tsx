@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { EvaluationMatchCards } from "./EvaluationMatchCards";
 import { formatDate, hrApi, type HrEvaluationDetailDTO } from "../api";
 
 type ActiveTab = "overview" | "interview-guides" | "parsed-profile";
@@ -294,10 +295,6 @@ export function CandidateEvaluationDetail({
   const summaryText = evaluation?.reasoning || evaluation?.recommendation || t("common.messages.noSummary");
   const technicalQuestions = evaluation?.technicalQuestions ?? [];
   const hrQuestions = evaluation?.hrQuestions ?? [];
-  const alignmentRows = useMemo(() => {
-    const alignment = evaluation?.experienceAlignment;
-    return alignment ? [alignment] : [];
-  }, [evaluation?.experienceAlignment]);
   const profileData = useMemo(() => {
     return normalizeProfileData(evaluation?.profileData);
   }, [evaluation?.profileData]);
@@ -480,42 +477,10 @@ export function CandidateEvaluationDetail({
                     </div>
 
                     <div className="lg:col-span-3">
-                      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 md:p-5">
-                        <h3 className="text-base font-semibold text-gray-900 mb-4">{t("evaluations.detail.sections.experienceAlignment")}</h3>
-                        {alignmentRows.length > 0 ? (
-                          <div className="space-y-4">
-                            {alignmentRows.map((alignment, index) => {
-                              const rawMatch = alignment.matchPercentage;
-                              const matchPercentage = rawMatch == null || Number.isNaN(rawMatch) ? null : Math.max(0, Math.min(rawMatch, 100));
-                              const description = t("evaluations.detail.experienceDescription", {
-                                required: alignment.yearsRequired ?? "-",
-                                candidate: alignment.yearsCandidate ?? "-",
-                              });
-                              const label = t("evaluations.detail.experienceMatchLabel", { index: index + 1 });
-
-                              return (
-                                <div key={`${label}-${index}`} className="space-y-2">
-                                  <div className="flex flex-col items-start justify-between gap-1 text-sm md:flex-row md:items-center">
-                                    <span className="font-medium text-gray-800">{label}</span>
-                                    <span className="text-gray-600">{matchPercentage == null ? "-" : `${Math.round(matchPercentage)}%`}</span>
-                                  </div>
-                                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
-                                    <div
-                                      className={`h-full ${
-                                        (matchPercentage ?? 0) > 80 ? "bg-green-500" : (matchPercentage ?? 0) > 50 ? "bg-yellow-500" : "bg-red-500"
-                                      }`}
-                                      style={{ width: `${matchPercentage ?? 0}%` }}
-                                    />
-                                  </div>
-                                  <p className="text-sm text-gray-600">{description}</p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">{t("evaluations.detail.sections.noAlignmentData")}</p>
-                        )}
-                      </div>
+                      <EvaluationMatchCards
+                        experienceAlignment={evaluation?.experienceAlignment ?? null}
+                        educationMatch={evaluation?.educationMatch ?? null}
+                      />
                     </div>
                   </div>
                 </div>

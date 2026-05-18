@@ -294,7 +294,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-full p-4 md:p-6">
+      <div className="bg-gray-50 p-4 md:p-6">
         <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex items-center justify-center md:p-12">
           <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
         </div>
@@ -304,7 +304,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
 
   if (!job) {
     return (
-      <div className="bg-gray-50 min-h-full p-4 md:p-6">
+      <div className="bg-gray-50 p-4 md:p-6">
         <div className="max-w-[1200px] mx-auto bg-white rounded-lg border border-gray-200 shadow-sm p-6 text-red-700">
           {error || t("jobOffers.detail.notFound")}
         </div>
@@ -313,7 +313,7 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
   }
 
   return (
-    <div className="bg-gray-50 min-h-full p-4 md:p-6">
+    <div className="bg-gray-50 p-4 md:p-6">
       <div className="max-w-[1200px] mx-auto space-y-6">
         <Card className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 space-y-5 md:p-6">
           <button
@@ -513,8 +513,9 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                 </p>
               </div>
 
-              <div className="w-full overflow-x-auto rounded-lg border border-gray-200 relative">
-                <Table>
+              <div className="relative rounded-lg border border-gray-200">
+                <div className="w-full overflow-x-auto">
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>
@@ -623,7 +624,8 @@ export function JobOfferManagement({ role }: { role: JobOfferManagementRole }) {
                       ))
                     )}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
                 {showApplicantsLoadingOverlay && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-gray-500" />

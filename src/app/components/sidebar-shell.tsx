@@ -149,13 +149,13 @@ export function SidebarShell({
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 h-full bg-white text-gray-900 overflow-y-auto">
-        <header className="border-b border-gray-200 bg-white px-4 py-3 md:px-8">
+      <div className="flex-1 min-w-0 h-full bg-white text-gray-900 flex flex-col">
+        <header className="flex-none border-b border-gray-200 bg-white px-4 py-3 md:px-8">
           <div className="flex items-center justify-end gap-3">
             <LanguageSwitcher />
           </div>
         </header>
-        <main className="h-full overflow-auto p-4 md:p-8">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-8">{children}</main>
       </div>
     </div>
   );

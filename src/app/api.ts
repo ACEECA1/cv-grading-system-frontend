@@ -588,6 +588,8 @@ export const candidateApi = {
     });
   },
   listSubmissions: () => requestJson<CandidateSubmissionDTO[]>("/api/candidate/submissions"),
+  retryEvaluation: (evaluationId: number) =>
+    requestJson<CandidateEvaluationDTO>(`/api/candidate/submissions/${evaluationId}/retry`, { method: "POST" }),
   downloadMyCv: (jobOfferId: number) => downloadWithAuth(`/api/candidate/submissions/${jobOfferId}/cv/download`, `submission-${jobOfferId}.pdf`),
   withdrawSubmission: (jobOfferId: number) => requestJson<void>(`/api/candidate/submissions/${jobOfferId}/cv`, { method: "DELETE" }),
 };

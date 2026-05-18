@@ -441,6 +441,7 @@ const fr = {
       experienceAlignment: "Alignement d'expérience",
       matchedSkills: "Compétences correspondantes",
       missingSkills: "Compétences manquantes",
+      retryEvaluation: "Relancer l'évaluation",
       withdrawDialogTitle: "Retirer la candidature ?",
       withdrawDialogDescription: "Voulez-vous vraiment annuler votre candidature pour ce poste ?",
       keepApplication: "Conserver la candidature",
@@ -452,6 +453,8 @@ const fr = {
       toasts: {
         withdrawn: "Candidature retirée avec succès",
         withdrawFailed: "Échec du retrait de la candidature",
+        retryStarted: "Relance de l'évaluation démarrée",
+        retryFailed: "Échec de la relance de l'évaluation",
       },
       a11y: {
         withdrawForTitle: "Retirer la candidature pour {{title}}",

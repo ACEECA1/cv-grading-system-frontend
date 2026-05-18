@@ -441,6 +441,7 @@ const en = {
       experienceAlignment: "Experience Alignment",
       matchedSkills: "Matched Skills",
       missingSkills: "Missing Skills",
+      retryEvaluation: "Retry Evaluation",
       withdrawDialogTitle: "Withdraw Application?",
       withdrawDialogDescription: "Are you sure you want to cancel your submission for this position?",
       keepApplication: "Keep Application",
@@ -452,6 +453,8 @@ const en = {
       toasts: {
         withdrawn: "Application withdrawn successfully",
         withdrawFailed: "Failed to withdraw application",
+        retryStarted: "Evaluation retry started",
+        retryFailed: "Failed to retry evaluation",
       },
       a11y: {
         withdrawForTitle: "Withdraw application for {{title}}",

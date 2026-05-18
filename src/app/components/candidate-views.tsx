@@ -16,7 +16,7 @@ import {
 } from "./ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
-import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle, SortAsc, Trash2 } from "lucide-react";
+import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle, SortAsc, Trash2, RefreshCw } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { ApplicationModal } from "./ApplicationModal";
 import { api, candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO } from "../api";
@@ -257,6 +257,7 @@ export function MyApplications() {
   const [submissions, setSubmissions] = useState<CandidateSubmissionDTO[]>([]);
   const [withdrawTarget, setWithdrawTarget] = useState<CandidateSubmissionDTO | null>(null);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [retryingEvaluationId, setRetryingEvaluationId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -299,6 +300,20 @@ export function MyApplications() {
     }
   };
 
+  const handleRetry = async (evaluationId: number) => {
+    setRetryingEvaluationId(evaluationId);
+    try {
+      await candidateApi.retryEvaluation(evaluationId);
+      const refreshed = await candidateApi.listSubmissions();
+      setSubmissions(refreshed);
+      toast.success(t("candidates.applications.toasts.retryStarted"));
+    } catch {
+      toast.error(t("candidates.applications.toasts.retryFailed"));
+    } finally {
+      setRetryingEvaluationId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-[1100px]">
       <div>
@@ -325,7 +340,10 @@ export function MyApplications() {
               </h2>
               {processing.map((submission) => {
                 const status = String(submission.evaluation?.status || submission.cvStatus);
+                const evaluationId = submission.evaluation?.id;
                 const canWithdraw = status === "WAITING" || status === "PROCESSING";
+                const canRetry = status === "FAILED" && evaluationId != null;
+                const isRetrying = retryingEvaluationId === evaluationId;
 
                 return (
                   <Card key={submission.cvId} className="p-4 md:p-6">
@@ -340,6 +358,21 @@ export function MyApplications() {
                         <span className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 ${statusBadge(status)}`} style={{ fontSize: 12, fontWeight: 600 }}>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t(`common.status.${status.toLowerCase()}`)}
                         </span>
+                        {canRetry && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (evaluationId != null) {
+                                void handleRetry(evaluationId);
+                              }
+                            }}
+                            disabled={isRetrying}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${isRetrying ? "animate-spin" : ""}`} />
+                            {t("candidates.applications.retryEvaluation")}
+                          </button>
+                        )}
                         {canWithdraw && (
                           <button
                             type="button"

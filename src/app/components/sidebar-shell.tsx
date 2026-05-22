@@ -44,7 +44,7 @@ export function SidebarShell({
   const { t } = useTranslation();
 
   return (
-    <div className="h-screen w-screen bg-gray-50 md:flex overflow-hidden">
+    <div className="min-h-screen w-screen bg-gray-50 md:flex">
       <button
         type="button"
         onClick={() => setIsMobileOpen(true)}

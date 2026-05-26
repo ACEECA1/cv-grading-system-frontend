@@ -269,7 +269,7 @@ export function SystemHealth() {
   ];
 
   return (
-    <div className="max-w-[1200px] space-y-6 bg-gray-50">
+    <div className="max-w-[1200px] space-y-6 bg-white">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">{t("systemHealth.title")}</h1>

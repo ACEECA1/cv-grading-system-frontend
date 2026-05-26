@@ -146,7 +146,8 @@ export interface CandidateEvaluationDTO {
   educationMatch: {
     requiredDegree: string | null;
     candidateDegree: string | null;
-    matchStatus: string | null;
+    matchLevel: "MATCH" | "MISMATCH" | "EXCEEDS" | null;
+    reasoning: string | null;
   } | null;
 }
 

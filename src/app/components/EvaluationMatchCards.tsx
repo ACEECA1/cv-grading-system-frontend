@@ -10,7 +10,8 @@ type ExperienceAlignment = {
 type EducationMatch = {
   requiredDegree: string | null;
   candidateDegree: string | null;
-  matchStatus: string | null;
+  matchLevel: "MATCH" | "MISMATCH" | "EXCEEDS" | null;
+  reasoning: string | null;
 } | null;
 
 interface EvaluationMatchCardsProps {
@@ -41,11 +42,16 @@ export function EvaluationMatchCards({ experienceAlignment, educationMatch }: Ev
   const progressColor =
     scoreOutOfTen >= 7 ? "bg-green-500" : scoreOutOfTen >= 4 ? "bg-yellow-500" : "bg-red-500";
 
-  const statusText = educationMatch?.matchStatus ?? "";
-  const isMismatch = /mismatch/i.test(statusText);
-  const isMatch = /match/i.test(statusText) && !isMismatch;
-  const badgeLabel = isMatch ? "Match" : "Mismatch";
-  const badgeClass = isMatch ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700";
+  let badgeLabel = "Mismatch";
+  let badgeClass = "bg-amber-100 text-amber-700";
+  
+  if (educationMatch?.matchLevel === "EXCEEDS") {
+    badgeLabel = "Exceeds Expectations";
+    badgeClass = "bg-purple-100 text-purple-700";
+  } else if (educationMatch?.matchLevel === "MATCH") {
+    badgeLabel = "Match";
+    badgeClass = "bg-green-100 text-green-700";
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -90,7 +96,7 @@ export function EvaluationMatchCards({ experienceAlignment, educationMatch }: Ev
           </p>
           <p>
             <span className="font-semibold">Reasoning: </span>
-            {asText(educationMatch?.matchStatus)}
+            {asText(educationMatch?.reasoning)}
           </p>
         </div>
       </div>

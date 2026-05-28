@@ -78,7 +78,14 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
       });
       onAuthenticated(tokens);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("auth.errors.loginFailed"));
+      const errMsg = err instanceof Error ? err.message : "";
+      if (errMsg.includes("UNVERIFIED_ACCOUNT")) {
+        setVerificationEmail(identity.trim());
+        setInfo("Please verify your account to continue.");
+        navigate(authPathByMode.verify);
+      } else {
+        setError(errMsg || t("auth.errors.loginFailed"));
+      }
     } finally {
       setBusy(false);
     }

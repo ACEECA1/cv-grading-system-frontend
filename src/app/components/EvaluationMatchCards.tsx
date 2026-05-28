@@ -1,7 +1,7 @@
 import { Briefcase, GraduationCap } from "lucide-react";
 
 type ExperienceAlignment = {
-  yearsRequired: number | null;
+  yearsRequired: { min: number | null; max: number | null } | null;
   yearsCandidate: number | null;
   matchScore?: number | null;
   matchPercentage?: number | null;
@@ -34,6 +34,18 @@ function asYears(value: number | null | undefined): string {
 
 function asText(value: string | null | undefined): string {
   return value && value.trim() ? value : "N/A";
+}
+
+function formatYearsRequired(yearsRequired: { min: number | null; max: number | null } | null | undefined): string {
+  if (!yearsRequired) return "N/A";
+  const { min, max } = yearsRequired;
+  if (min != null && max != null) {
+    if (min === max) return `${min}`;
+    return `${min}-${max}`;
+  }
+  if (min != null) return `${min}+`;
+  if (max != null) return `Up to ${max}`;
+  return "N/A";
 }
 
 export function EvaluationMatchCards({ experienceAlignment, educationMatch }: EvaluationMatchCardsProps) {
@@ -71,7 +83,7 @@ export function EvaluationMatchCards({ experienceAlignment, educationMatch }: Ev
         </div>
 
         <p className="text-sm text-gray-500">
-          Required: {asYears(experienceAlignment?.yearsRequired)} years | Candidate:{" "}
+          Required: {formatYearsRequired(experienceAlignment?.yearsRequired)} years | Candidate:{" "}
           {asYears(experienceAlignment?.yearsCandidate)} years
         </p>
       </div>

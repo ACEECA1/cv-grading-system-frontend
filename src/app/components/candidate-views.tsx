@@ -19,8 +19,79 @@ import { JobOffersPaginationFooter } from "./JobOffersPaginationFooter";
 import { Search, MapPin, Briefcase, CheckCircle2, Loader2, AlertTriangle, SortAsc, Trash2, RefreshCw } from "lucide-react";
 import { MatchRing } from "./match-ring";
 import { ApplicationModal } from "./ApplicationModal";
-import { api, candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO } from "../api";
+import { api, candidateApi, formatDate, formatScoreOutOfTen, type CandidateSubmissionDTO, type JobOfferDTO, loadStoredAuth, buildApiUrl } from "../api";
 import { toast } from "sonner";
+
+function SseProgressBadge({ evaluationId, status, t, onComplete }: { evaluationId?: number; status: string; t: any; onComplete?: () => void }) {
+  const [progress, setProgress] = useState<number>(0);
+
+  useEffect(() => {
+    if (status !== "WAITING" || evaluationId == null) {
+      setProgress(0);
+      return;
+    }
+
+    const auth = loadStoredAuth();
+    const token = auth?.accessToken || "";
+    const url = buildApiUrl(`/api/v1/evaluations/${evaluationId}/progress?token=${token}`);
+    
+    const eventSource = new EventSource(url);
+
+    eventSource.addEventListener("progress", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (typeof data.progress === "number") {
+          setProgress(data.progress);
+          if (data.progress >= 100 && onComplete) {
+            onComplete();
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse SSE progress", e);
+      }
+    });
+
+    eventSource.addEventListener("error", () => {
+      eventSource.close();
+    });
+
+    return () => {
+      eventSource.close();
+    };
+  }, [evaluationId, status, onComplete]);
+
+  if (status === "FAILED") return <AlertTriangle className="w-3.5 h-3.5" />;
+  if (status === "SCORED" || status === "EVALUATED") return <CheckCircle2 className="w-3.5 h-3.5" />;
+  
+  if (status === "WAITING" && progress > 0 && progress < 100) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+            <path
+              className="text-amber-200"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <path
+              className="text-amber-600 transition-all duration-500 ease-out"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeDasharray={`${progress}, 100`}
+              fill="none"
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+          </svg>
+        </div>
+        <span>{progress}%</span>
+      </div>
+    );
+  }
+
+  return <Loader2 className="w-3.5 h-3.5 animate-spin" />;
+}
 
 function statusBadge(status: string) {
   if (status === "SCORED" || status === "EVALUATED") {
@@ -279,6 +350,15 @@ export function MyApplications() {
     };
   }, []);
 
+  const refreshSubmissions = async () => {
+    try {
+      const refreshed = await candidateApi.listSubmissions();
+      setSubmissions(refreshed);
+    } catch (e) {
+      console.error("Failed to refresh submissions", e);
+    }
+  };
+
   const processing = submissions.filter((s) => s.evaluation?.status !== "SCORED");
   const completed = submissions.filter((s) => s.evaluation?.status === "SCORED");
 
@@ -356,7 +436,8 @@ export function MyApplications() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 ${statusBadge(status)}`} style={{ fontSize: 12, fontWeight: 600 }}>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t(`common.status.${status.toLowerCase()}`)}
+                          <SseProgressBadge evaluationId={evaluationId} status={status} t={t} onComplete={refreshSubmissions} />
+                          {t(`common.status.${status.toLowerCase()}`)}
                         </span>
                         {canRetry && (
                           <button

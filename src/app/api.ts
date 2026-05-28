@@ -139,7 +139,7 @@ export interface CandidateEvaluationDTO {
     importance: string;
   }>;
   experienceAlignment: {
-    yearsRequired: number | null;
+    yearsRequired: { min: number | null; max: number | null } | null;
     yearsCandidate: number | null;
     matchPercentage: number | null;
   } | null;
@@ -246,11 +246,11 @@ export interface StoredAuth {
 }
 
 const STORAGE_KEY = "talent-portal-auth";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, "");
+const API_BASE_URL = ((import.meta as ImportMeta & { env: { VITE_API_BASE_URL?: string } }).env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 const API_BASE_URL_HAS_API_PREFIX = API_BASE_URL.endsWith("/api");
 const API_BASE_URL_WITHOUT_API = API_BASE_URL_HAS_API_PREFIX ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
-function buildApiUrl(path: string) {
+export function buildApiUrl(path: string) {
   if (API_BASE_URL_HAS_API_PREFIX && path.startsWith("/api/")) {
     return `${API_BASE_URL_WITHOUT_API}${path}`;
   }

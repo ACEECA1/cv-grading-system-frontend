@@ -25,6 +25,7 @@ export function CandidateJobDetail() {
   const navigate = useNavigate();
 
   const [job, setJob] = useState<JobOfferDetailDTO | null>(null);
+  const [hasApplied, setHasApplied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +44,15 @@ export function CandidateJobDetail() {
       try {
         const data = await candidateApi.getCandidateJobOffer(jobId);
         if (!cancelled) setJob(data);
+
+        try {
+          const subs = await candidateApi.listSubmissions();
+          if (!cancelled && data) {
+            setHasApplied(subs.some(s => s.jobOffer.id === data.id));
+          }
+        } catch (e) {
+          // ignore
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : t("jobOffers.candidateDetail.errors.load"));
@@ -109,9 +119,20 @@ export function CandidateJobDetail() {
               </div>
             </div>
 
-            <Button onClick={() => setIsModalOpen(true)} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
-              {t("common.actions.applyNow")}
-            </Button>
+            {hasApplied ? (
+              <div className="flex flex-col items-end gap-2 mt-2 md:mt-0">
+                <Button onClick={() => navigate("/candidate/applications")} className="bg-gray-100 hover:bg-gray-200 text-gray-700">
+                  {t("candidates.applications.manageApplication", "Manage Application")}
+                </Button>
+                <p className="text-xs text-amber-600 font-medium max-w-[200px] text-right">
+                  {t("candidates.applications.alreadyAppliedMsg", "You must withdraw your previous application to upload a new CV.")}
+                </p>
+              </div>
+            ) : (
+              <Button onClick={() => setIsModalOpen(true)} className="bg-[#ED1C24] hover:bg-[#c81820] text-white">
+                {t("common.actions.applyNow")}
+              </Button>
+            )}
           </div>
         </Card>
 

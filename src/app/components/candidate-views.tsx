@@ -282,15 +282,15 @@ export function MyApplications() {
   const processing = submissions.filter((s) => s.evaluation?.status !== "SCORED");
   const completed = submissions.filter((s) => s.evaluation?.status === "SCORED");
 
-  const handleWithdraw = async (jobOfferId: number) => {
+  const handleWithdraw = async (evaluationId: number) => {
     setIsWithdrawing(true);
     try {
-      await api.withdrawSubmission(jobOfferId);
+      await api.withdrawSubmission(evaluationId);
       toast.success(t("candidates.applications.toasts.withdrawn"));
-      setSubmissions((prev) => prev.filter((item) => item.jobOffer.id !== jobOfferId));
+      setSubmissions((prev) => prev.filter((item) => item.evaluation?.id !== evaluationId));
       setSelectedApp((prev) => {
         const selectedSubmission = submissions.find((item) => item.cvId === prev);
-        return selectedSubmission?.jobOffer.id === jobOfferId ? null : prev;
+        return selectedSubmission?.evaluation?.id === evaluationId ? null : prev;
       });
       setWithdrawTarget(null);
     } catch {
@@ -531,10 +531,12 @@ export function MyApplications() {
               {t("candidates.applications.keepApplication")}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault();
-                if (withdrawTarget) {
-                  void handleWithdraw(withdrawTarget.jobOffer.id);
+              onClick={() => {
+                if (withdrawTarget && withdrawTarget.evaluation?.id != null) {
+                  void handleWithdraw(withdrawTarget.evaluation.id);
+                } else {
+                  toast.error(t("candidates.applications.toasts.withdrawFailed"));
+                  setWithdrawTarget(null);
                 }
               }}
               className="bg-red-600 hover:bg-red-700 text-white"

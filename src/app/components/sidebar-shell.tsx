@@ -30,7 +30,7 @@ const roleSubtitleKey: Record<Role, string> = {
 const roleBadgeColor: Record<Role, string> = {
   admin: "bg-[#ED1C24] text-white",
   hr: "bg-amber-500 text-white",
-  candidate: "bg-slate-700 text-white",
+  candidate: "bg-[#0a1128] text-white",
 };
 
 export function SidebarShell({
@@ -66,7 +66,7 @@ export function SidebarShell({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#556880] text-white flex flex-col p-4 transition-transform duration-150 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white text-gray-900 border-r border-gray-200 flex flex-col p-4 transition-transform duration-150 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen max-h-screen overflow-y-auto`}
       >
@@ -82,13 +82,13 @@ export function SidebarShell({
         </div>
 
         <div className="pb-8">
-          <div className="w-20 h-20 flex items-center justify-center mb-3 mx-auto">
-            <img src={logoUrl} alt="Djezzy" className="w-full h-full object-contain" />
+          <div className="w-56 h-32 flex items-center justify-center mb-3 mx-auto">
+            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain scale-[1.35]" />
           </div>
-          <div className="text-white text-center" style={{ fontSize: 15, fontWeight: 600, lineHeight: "20px" }}>
+          <div className="text-gray-900 text-center" style={{ fontSize: 15, fontWeight: 600, lineHeight: "20px" }}>
             {t("common.appName")}
           </div>
-          <div className="text-[#bcc7de] text-center" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.6px" }}>
+          <div className="text-gray-500 text-center" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.6px" }}>
             {t(roleSubtitleKey[role])}
           </div>
         </div>
@@ -101,7 +101,7 @@ export function SidebarShell({
                 to={item.to}
                 onClick={() => setIsMobileOpen(false)}
                 className={({ isActive }) => `flex items-center gap-4 px-4 py-2 rounded-lg text-left transition-colors ${
-                  isActive ? "bg-[#ED1C24] text-white" : "text-[#bcc7de] hover:bg-white/5"
+                  isActive ? "bg-[#ED1C24] text-white" : "text-gray-700 hover:bg-slate-100 hover:text-gray-900"
                 }`}
               >
                 <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
@@ -111,7 +111,7 @@ export function SidebarShell({
           })}
         </nav>
 
-        <div className="border-t border-white/10 pt-4 space-y-3">
+        <div className="border-t border-gray-200 pt-4 space-y-3">
           <div className="px-4">
             <span
               className={`inline-block px-2.5 py-1 rounded-md ${roleBadgeColor[role]}`}
@@ -119,7 +119,7 @@ export function SidebarShell({
             >
               {role.toUpperCase()}
             </span>
-            <p className="mt-2 text-[#bcc7de]" style={{ fontSize: 13 }}>
+            <p className="mt-2 text-gray-900 font-medium" style={{ fontSize: 13 }}>
               {fullName}
             </p>
           </div>
@@ -128,7 +128,7 @@ export function SidebarShell({
             onClick={() => setIsMobileOpen(false)}
             className={({ isActive }) =>
               `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-[#bcc7de] hover:bg-white/5"
+                isActive ? "bg-slate-100 text-gray-900" : "text-gray-700 hover:bg-slate-100 hover:text-gray-900"
               }`
             }
             aria-label="Settings"
@@ -141,7 +141,7 @@ export function SidebarShell({
               setIsMobileOpen(false);
               onLogout();
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg w-full text-[#bcc7de] hover:bg-white/5"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg w-full text-gray-700 hover:bg-slate-100 hover:text-gray-900"
           >
             <LogOut className="w-[18px] h-[18px]" />
             <span style={{ fontSize: 14 }}>{t("nav.logout")}</span>

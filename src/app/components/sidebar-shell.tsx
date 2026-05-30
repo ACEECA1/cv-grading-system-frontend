@@ -68,7 +68,7 @@ export function SidebarShell({
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white text-gray-900 border-r border-gray-200 flex flex-col p-4 transition-transform duration-150 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen max-h-screen overflow-y-auto`}
+        } md:relative md:translate-x-0 md:sticky md:top-0 md:h-screen max-h-screen overflow-y-auto overflow-x-hidden`}
       >
         <div className="flex justify-end md:hidden">
           <button

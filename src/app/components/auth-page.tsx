@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { authApi, type AuthTokensDTO } from "../api";
-const logoUrl = new URL("../../imports/logo.png", import.meta.url).href;
+
 
 type AuthMode = "login" | "register-candidate" | "register-hr" | "verify";
 
@@ -196,7 +196,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-[420px] bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-8">
         <div className="flex flex-col items-center gap-3 mb-6">
-          <img src={logoUrl} alt="Djezzy" className="w-20 h-20 object-contain" />
+
           <div className="text-lg font-semibold md:text-xl">{t("common.appName")}</div>
           <div className="text-gray-500 text-center" style={{ fontSize: 13 }}>
             {activeMode === "verify" ? t("auth.verifyEmail") : activeMode.startsWith("register") ? t("auth.createAccount") : t("auth.signInToContinue")}

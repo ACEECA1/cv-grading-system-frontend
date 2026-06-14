@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { matchPath, useLocation } from "react-router-dom";
 
-const TITLE_SUFFIX = "Djezzy Talent";
+const TITLE_SUFFIX = "CV Grading System";
 
 const routeTitles: Array<{ pattern: string; title: string }> = [
   { pattern: "/auth/login", title: "Login" },
@@ -36,7 +36,7 @@ function resolveTitle(pathname: string): string {
   if (pathname.startsWith("/admin")) return "Admin Portal";
   if (pathname.startsWith("/hr")) return "HR Portal";
   if (pathname.startsWith("/candidate")) return "Candidate Portal";
-  return "Djezzy Talent";
+  return "CV Grading System";
 }
 
 export function useDynamicTitle() {

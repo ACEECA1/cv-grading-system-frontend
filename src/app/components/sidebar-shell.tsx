@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-const logoUrl = new URL("../../imports/logo.png", import.meta.url).href;
+
 
 export type Role = "admin" | "hr" | "candidate";
 
@@ -82,9 +82,7 @@ export function SidebarShell({
         </div>
 
         <div className="pb-8">
-          <div className="w-56 h-32 flex items-center justify-center mb-3 mx-auto">
-            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain scale-[1.35]" />
-          </div>
+
           <div className="text-gray-900 text-center" style={{ fontSize: 15, fontWeight: 600, lineHeight: "20px" }}>
             {t("common.appName")}
           </div>
